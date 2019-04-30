@@ -30,6 +30,10 @@ initialisationGrille([11,9,10,9,11,
                        0,0,0 ,0,0,
                        5,3,4 ,3,5]).
 
+memberDif(X,[X|LVal],LVal).
+memberDif(X,[Y|LVal],[Y|NLVal]):-
+        memberDif(X,LVal,NLVal).
+
 deplacementCarte(1,['N']).
 deplacementCarte(2,['N', 'NE', 'E', 'S', 'O', 'NO']).
 deplacementCarte(3,['N', 'NE', 'E', 'S', 'O', 'NO']).
@@ -49,29 +53,31 @@ indiceCarte(NumC, Ind, Grille):-
         nth1(Ind, Grille, NumC).
 
 %Retourne une direction possible de la carte
-directionPossible(NumC, Ind, newInd, Grille):-
+directionPossible(NumC, Ind, NewInd, Grille):-
         deplacementCarte(NumC, LDepl),
         memberDif(Dir, LDepl,_),
         indiceCarte(NumC, Ind, Grille),
         directionGrilleValide(Ind, Dir),
-        directionToInd(Ind,Dir,newInd).
+        directionToInd(Ind,Dir,NewInd).
 
-directionToInd(Ind,'N',Ind-5).
-directionToInd(Ind,'NE',Ind-4).
-directionToInd(Ind,'E',Ind+1).
-directionToInd(Ind,'SE',Ind+6).
-directionToInd(Ind,'S',Ind+5).
-directionToInd(Ind,'SO',Ind+4).
-directionToInd(Ind,'O',Ind-1).
-directionToInd(Ind,'NO',Ind-6).
+directionToInd(Ind,'N',NewInd):-NewInd is Ind-5.
+directionToInd(Ind,'NE',NewInd):-NewInd is Ind-4.
+directionToInd(Ind,'E',NewInd):-NewInd is Ind+1.
+directionToInd(Ind,'SE',NewInd):-NewInd is Ind+6.
+directionToInd(Ind,'S',NewInd):-NewInd is Ind+5.
+directionToInd(Ind,'SO',NewInd):-NewInd is Ind+4.
+directionToInd(Ind,'O',NewInd):-NewInd is Ind-1.
+directionToInd(Ind,'NO',NewInd):-NewInd is Ind-6.
 
+/*
 deplacementCarteValide(_, NewInd, Grille):-
         indiceCarte(NumC, NewInd, Grille),
         NumC == 0.
+*/
 
 deplacementCarteValide(Joueur, NewInd, Grille):-
         indiceCarte(NumC, NewInd, Grille),
-        carteJoueur(Joueur, LCartes),
+        cartesJoueur(Joueur, LCartes),
         \+member(NumC, LCartes).
         
         
@@ -79,8 +85,8 @@ joueurAdverse(top, bottom).
 joueurAdverse(bottom,top).
 
 % Controler déplacement valide en fonction des cartes
-cartesJoueur(top,[1,2,3,4,5,6]).
-cartesJoueur(bottom,[7,8,9,10,11,12]).
+cartesJoueur(bottom,[1,2,3,4,5,6]).
+cartesJoueur(top,[7,8,9,10,11,12]).
 
 deplacerCarte(Ind, NewInd, Grille, NewGrille, CarteCapturee):-
         nth1(NewInd, Grille, CarteCapturee),
@@ -88,19 +94,19 @@ deplacerCarte(Ind, NewInd, Grille, NewGrille, CarteCapturee):-
         editValeur(Ind, 0, Grille, NewGrille1),
         editValeur(NewInd, Carte, NewGrille1, NewGrille).
 
-editValeur(1, NewVal, Grille, [NewVal|Grille]).
+editValeur(1, NewVal, [_|Grille], [NewVal|Grille]).
 
 editValeur(Ind, NewVal, [E|Grille], [E|NewGrille]):-
         NewInd is Ind-1,
         editValeur(NewInd, NewVal, Grille, NewGrille).
         
 
-deplacement(Joueur, Grille, NewGrille):-
-        carteJoueur(Joueur, LCartes),
+deplacement(Joueur, Grille, NewGrille, CarteCapturee):-
+        cartesJoueur(Joueur, LCartes),
         memberDif(NumC, LCartes, _),
         directionPossible(NumC, Ind, NewInd, Grille),      % Retourne Ind & Dir
         deplacementCarteValide(Joueur, NewInd, Grille),
-        deplacerCarte(Ind, NewInd, Grille, NewGrille).
+        deplacerCarte(Ind, NewInd, Grille, NewGrille, CarteCapturee).
         
 
 directionGrilleValide(Ind, 'N'):- Ind > 5.
@@ -135,3 +141,6 @@ directionGrilleValide(Ind, 'NO'):-
         Mod is mod(Ind,5),
         Mod \= 1.
 
+/* Pour tester
+deplacement(top, [11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5], NewGrille, CarteCapturee).
+*/
