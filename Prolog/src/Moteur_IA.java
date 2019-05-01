@@ -25,7 +25,7 @@ public class Moteur_IA {
 			sp = new SICStus();
 
 			// Chargement d'un fichier prolog .pl
-			sp.load("./yokai.pl");
+			sp.load("./src/projet_ia/yokai.pl");
 
 		}
 		// exception déclanchée par SICStus lors de la création de l'objet sp
