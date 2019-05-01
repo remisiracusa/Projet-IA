@@ -1,10 +1,9 @@
 /* -*- Mode:Prolog; coding:iso-8859-1; indent-tabs-mode:nil; prolog-indent-width:8; prolog-paren-indent:3; tab-width:8; -*- */
 
-:- set_prolog_flag(toplevel_print_options,[max_depth(0)]).
+:-set_prolog_flag(toplevel_print_options,[max_depth(0)]).
 :-use_module(library(plunit)).
 :-use_module(library(lists)).
 :-use_module(library(clpfd)).
-
 % Déplacements : N, NE, E, SE, S, SO, O, NO
 
 % Pions sud
@@ -141,6 +140,18 @@ directionGrilleValide(Ind, 'NO'):-
         Mod is mod(Ind,5),
         Mod \= 1.
 
+profondeur(Grille,Joueur,LSol,Acc1):-
+        deplacement(Joueur, Grille, NewGrille, CarteCapturee),
+        \+member([NewGrille|CarteCapturee],LSol),
+        profondeur(Grille,Joueur,[[NewGrille|CarteCapturee]|LSol],Acc1),
+        !.
+profondeur(_,_,Acc1,Acc1).
+        
+yokai(Grille,Joueur,Sol):-
+        profondeur(Grille,Joueur,[],LSol),
+        reverse(LSol,Sol).
+
 /* Pour tester
 deplacement(top, [11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5], NewGrille, CarteCapturee).
+yokai([11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5],top,Sol).
 */
