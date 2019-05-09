@@ -1,8 +1,8 @@
 #ifndef client
 #define client
 
-void jouerPiece(TCoupReq* reqC, TCoupRep* repC, int sock, int numPartie);
-void coupAdverse(TCoupReq* reqC, int sock);
+int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* TCoupIA, int sock, int sockIA, int numPartie);
+int coupAdverse(TCoupReq* reqC, TCoupIA* TCoupIA, int sock, int sockIA);
 int validationCoup(char joueur, TCoupRep* repC, int sock);
 
 #endif
