@@ -5,16 +5,96 @@ import se.sics.jasper.*;
 
 //pour les lectures au clavier
 import java.io.*;
-
+import java.net.ServerSocket;
+import java.net.Socket;
 //pour utiliser les HashMap
 import java.util.*;
 
+import projet_ia.TPartie.CodeReq;
+import projet_ia.TPartie.Sens;
+
 
 public class Moteur_IA {
-
+	static Sens sens;
+	static int numPartie;
+	static boolean tour;
+	static boolean cont;
 
 	public static void main(String[] args) {
+		ServerSocket srv; //Socket de connexion
+		Socket sockComm; // Socket de communication
+		TPartie TPartie = new TPartie();
+		TCoup TCoup = new TCoup();
+		numPartie = 1;
+		cont = true;
+		try{
+			srv = new ServerSocket(2323);
+			sockComm = srv.accept();
+			InputStream is = sockComm.getInputStream();
+			DataInputStream dis = new DataInputStream(is);
+			OutputStream os = sockComm.getOutputStream();
+			DataOutputStream dos = new DataOutputStream(os);
+			System.out.println("Début du serveur");
+			
+			while(numPartie < 3) {
+				//Reception sens des pieces
+				if(dis.readInt() == 0) {
+					TPartie.setCodeReq(CodeReq.INIT);
+				}
+				if(dis.readInt() == 0) {
+					TPartie.setSens(Sens.NORD);
+				}else {
+					TPartie.setSens(Sens.SUD);
+				}
+				numPartie = dis.readInt();
+				if(dis.readInt() == 0) {
+					tour = false;
+				}else {
+					tour = true;
+				}
+				
+				System.out.println("Reçu : "+TPartie.getCodeReq()+" "+TPartie.getSens()+" "+numPartie+" "+tour);
 
+				while(cont) {
+					if(tour) {
+						//Trouver un coup avec Prolog
+			
+						//Envoie coup au client
+						
+						//Si deplacement 
+						dos.writeInt(TCoup.getCodeRep());
+						dos.writeInt(TCoup.getPieceSens());
+						dos.writeInt(TCoup.getPieceType());
+						dos.writeInt(TCoup.getTlgDep());
+						dos.writeInt(TCoup.getTcolDep());
+						dos.writeInt(TCoup.getTlgArr());
+						dos.writeInt(TCoup.getTcolArr());
+						dos.writeInt(TCoup.getEstCapt());		
+						
+						//Si placement d'une piece capturee
+						dos.writeInt(TCoup.getCodeRep());
+						dos.writeInt(TCoup.getPieceSens());
+						dos.writeInt(TCoup.getPieceType());
+						dos.writeInt(TCoup.getTlgDep());
+						dos.writeInt(TCoup.getTcolDep());
+					}else {
+						//Recevoir soit coup adverse soit réinitialisation
+					}
+				}
+			}
+			dos.close();
+			os.close();
+			dis.close();
+			is.close();
+			sockComm.close();
+			srv.close();
+			System.out.println("Arrêt du serveur");
+		}catch(IOException e){
+			e.printStackTrace();}
+	}
+
+	public static void jasper() {
+		/*
 		String saisie = new String("");
 
 		SICStus sp = null;
@@ -106,10 +186,9 @@ public class Moteur_IA {
 			saisie = saisieClavier();        
 		}
 		System.out.println("End of jSicstus");
-		System.out.println("Bye bye");
+		System.out.println("Bye bye");*/
 	}
-
-
+	
 	public static String saisieClavier() {
 
 		// declaration du buffer clavier
@@ -124,5 +203,5 @@ public class Moteur_IA {
 			System.exit(-1);
 		}
 		return ("halt.");
-	}
+	}	
 }
