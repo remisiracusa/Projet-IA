@@ -12,7 +12,7 @@ int sockConx;
 int sizeAddr;
 int sockJoueurs[2];
 int nbJoueurInPartie;
-int timestampLastCoup;
+clock_t timestampLastCoup;
 
 int numPartie;
 

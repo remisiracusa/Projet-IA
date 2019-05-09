@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <time.h>
 
 #include "validation.h"
 #include "serveur.h"
@@ -40,7 +41,7 @@ void attenteJoueurs() {
 
 void receivePartie(int joueurEnCours) {
 	if (nbJoueurInPartie == 2) {
-		perror("Erreur les 2 joueurs sont déjà connectés demande refusée");
+		perror("Erreur les 2 joueurs sont déjà connectés demande refusée\n");
 		recv(sockJoueurs[joueurEnCours], &partieReq, sizeof(TPartieReq), 0); // Juste pour vider le buffer de réception
 
 		TPartieRep partieEnCoursRep;
@@ -48,14 +49,14 @@ void receivePartie(int joueurEnCours) {
 
 		err = send(sockJoueurs[joueurEnCours], &partieEnCoursRep, sizeof(TPartieRep), 0);
 		if (err != sizeof(TPartieRep))
-			fprintf(stderr, "Erreur dans l'envoi de reponse partie au joueur %d", joueurEnCours);
+			fprintf(stderr, "Erreur dans l'envoi de reponse partie au joueur %d\n", joueurEnCours);
 
 		return;
 	}
 
 	err = recv(sockJoueurs[joueurEnCours], &partieReq, sizeof(TPartieReq), 0);
 	if (err < 0) {
-		perror("Erreur dans la reception de partie");
+		perror("Erreur dans la reception de partie\n");
 	} else {
 		strcpy(infoJoueur[joueurEnCours].nomJoueur, partieReq.nomJoueur);
 		infoJoueur[joueurEnCours].piece = partieReq.piece;
@@ -74,7 +75,7 @@ void receivePartie(int joueurEnCours) {
 
 		err = send(sockJoueurs[joueurEnCours], &partieEnCoursRep, sizeof(TPartieRep), 0);
 		if (err != sizeof(TPartieRep))
-			fprintf(stderr, "Erreur dans l'envoi de reponse partie au joueur %d", joueurEnCours);
+			fprintf(stderr, "Erreur dans l'envoi de reponse partie au joueur %d\n", joueurEnCours);
 
 		TPartieRep partieAdversRep;
 		partieAdversRep.err = ERR_OK;
@@ -83,7 +84,7 @@ void receivePartie(int joueurEnCours) {
 
 		err = send(sockJoueurs[joueurAdverse], &partieAdversRep, sizeof(TPartieRep), 0);
 		if (err != sizeof(TPartieRep))
-			fprintf(stderr, "Erreur dans l'envoi de reponse partie au joueur %d", joueurAdverse);
+			fprintf(stderr, "Erreur dans l'envoi de reponse partie au joueur %d\n", joueurAdverse);
 
 		initialiserPartie();
 	}
@@ -96,12 +97,12 @@ void receiveCoup(int joueurEnCours) {
 	} else {
 		TCoupRep coupRep;
 		if (coupReq.numPartie != numPartie) {
-			perror("Erreur le numero de partie n'est pas identique entre le serveur et le joueur");
+			perror("Erreur le numero de partie n'est pas identique entre le serveur et le joueur\n");
 			coupRep.err = ERR_COUP;
 
 			err = send(sockJoueurs[joueurEnCours], &coupRep, sizeof(TCoupRep), 0);
 			if (err != sizeof(TCoupRep))
-				fprintf(stderr, "Erreur dans l'envoi de reponse coup au joueur %d", joueurEnCours);
+				fprintf(stderr, "Erreur dans l'envoi de reponse coup au joueur %d\n", joueurEnCours);
 			return;
 		}
 
@@ -109,31 +110,28 @@ void receiveCoup(int joueurEnCours) {
 										   coupReq.typeCoup,
 										   coupRep.propCoup) ? VALID : TRICHE;
 
-		// Gérer le timeout
-
 		switch (coupRep.propCoup) {
 			case GAGNE:
-				printf("Partie gagnée");
-				finPartie(joueurEnCours);
-				break;
 			case NUL:
-				printf("Partie nulle");
-				finPartie(-1);
-				break;
 			case PERDU:
-				printf("Partie perdue");
-				finPartie(joueurAdverse);
+				err = send(sockJoueurs[joueurEnCours], &coupRep, sizeof(TCoupRep), 0);
+				if (err != sizeof(TCoupRep))
+					fprintf(stderr, "Erreur dans l'envoi de reponse coup au joueur %d\n", joueurEnCours);
+				timestampLastCoup = -1;
 				break;
 			case CONT:
-				printf("Coup vérifié, en attente prochain coup");
+				printf("Coup vérifié, en attente prochain coup\n");
+				err = send(sockJoueurs[joueurAdverse], &coupReq, sizeof(TCoupReq), 0);
+				if (err < 0) {
+					perror("Erreur dans la reception de coup\n");
+				}
+
+				printf("Début décompte\n");
+				timestampLastCoup = clock();
 			default:
 				break;
 		}
 	}
-}
-
-void finPartie(int joueurGagnant) {
-
 }
 
 void loop() {
@@ -142,25 +140,44 @@ void loop() {
 	int sockJoueur;
 	numPartie = 1;
 	timestampLastCoup = -1;
-	while (1) {
+	while (numPartie <= 2) {
 		sockJoueur = sockJoueurs[joueurEnCours];
+
+		if (timestampLastCoup != -1 && ((clock() - timestampLastCoup) / CLOCKS_PER_SEC) >= TIME_MAX) {
+			printf("Timeout atteint, au tour de l'adversaire\n");
+
+			TCoupRep coupRep;
+			coupRep.err = ERR_OK;
+			coupRep.validCoup = TIMEOUT;
+			err = send(sockJoueurs[joueurEnCours], &coupRep, sizeof(TCoupRep), 0);
+			if (err != sizeof(TCoupRep))
+				fprintf(stderr, "Erreur dans l'envoi de reponse timeout au joueur %d\n", joueurEnCours);
+			err = send(sockJoueurs[joueurAdverse], &coupRep, sizeof(TCoupRep), 0);
+			if (err != sizeof(TCoupRep))
+				fprintf(stderr, "Erreur dans l'envoi de reponse timeout au joueur %d\n", joueurAdverse);
+
+			printf("Début décompte\n");
+			timestampLastCoup = clock();
+			joueurEnCours = joueurEnCours == 0 ? 1 : 0;
+		}
 
 		err = recv(sockJoueur, &typeRequete, sizeof(TIdReq), MSG_PEEK);
 		if (err < 0) {
-			perror("Erreur dans la reception");
+			perror("Erreur dans la reception\n");
 		} else {
 			switch (typeRequete) {
 				case PARTIE:
 					receivePartie(joueurEnCours);
+					joueurEnCours = joueurEnCours == 0 ? 1 : 0;
 					break;
 				case COUP:
 					receiveCoup(joueurEnCours);
+					joueurEnCours = joueurEnCours == 0 ? 1 : 0;
 					break;
 				default:
 					perror("Impossible de déterminer le type de requete\n");
 			}
 		}
-		joueurEnCours = joueurEnCours == 0 ? 1 : 0;
 	}
 
 }
