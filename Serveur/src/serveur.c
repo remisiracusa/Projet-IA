@@ -107,8 +107,8 @@ void receiveCoup(int joueurEnCours) {
 		}
 
 		coupRep.validCoup = validationCoup((infoJoueur[joueurEnCours].piece == SUD && numPartie == 1 ? 1 : 2),
-										   coupReq.typeCoup,
-										   coupRep.propCoup) ? VALID : TRICHE;
+										   coupReq,
+										   &coupRep.propCoup) ? VALID : TRICHE;
 
 		switch (coupRep.propCoup) {
 			case GAGNE:

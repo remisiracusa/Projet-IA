@@ -15,6 +15,9 @@
 #ifndef _validation_h
 #define _validation_h
 
+#include <stdbool.h>
+#include "protocolYokai.h"
+
 /* Validation d'un coup :
  * parametres : 
  *    le numero du joueur courant : 1 (le premier qui a commence a jouer) ou 
