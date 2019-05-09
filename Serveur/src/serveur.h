@@ -13,6 +13,7 @@ int sizeAddr;
 int sockJoueurs[2];
 int nbJoueurInPartie;
 clock_t timestampLastCoup;
+bool partieFinie;
 
 int numPartie;
 

@@ -118,11 +118,12 @@ void receiveCoup(int joueurEnCours) {
 				if (err != sizeof(TCoupRep))
 					fprintf(stderr, "Erreur dans l'envoi de reponse coup au joueur %d\n", joueurEnCours);
 				timestampLastCoup = -1;
+				partieFinie = true;
 				break;
 			case CONT:
 				printf("Coup vérifié, en attente prochain coup\n");
 				err = send(sockJoueurs[joueurAdverse], &coupReq, sizeof(TCoupReq), 0);
-				if (err < 0) {
+				if (err != sizeof(TCoupReq)) {
 					perror("Erreur dans la reception de coup\n");
 				}
 
@@ -140,8 +141,21 @@ void loop() {
 	int sockJoueur;
 	numPartie = 1;
 	timestampLastCoup = -1;
+	partieFinie = false;
 	while (numPartie <= 2) {
 		sockJoueur = sockJoueurs[joueurEnCours];
+
+		if (partieFinie) {
+			printf("Partie terminée\n");
+			if (numPartie != 2) {
+				printf("Début de la revanche\n");
+				joueurEnCours = infoJoueur[joueurEnCours].piece != NORD ? joueurAdverse : joueurEnCours;	// Sélection du joueur NORD pour la revanche
+				numPartie++;
+			} else {
+				printf("Jeu terminé\n");
+			}
+			partieFinie = false;
+		}
 
 		if (timestampLastCoup != -1 && ((clock() - timestampLastCoup) / CLOCKS_PER_SEC) >= TIME_MAX) {
 			printf("Timeout atteint, au tour de l'adversaire\n");
@@ -176,6 +190,12 @@ void loop() {
 					break;
 				default:
 					perror("Impossible de déterminer le type de requete\n");
+					TCoupRep coupRep;
+					coupRep.err = ERR_TYP;
+					err = send(sockJoueur, &coupRep, sizeof(TCoupRep), 0);
+					if (err != sizeof(TCoupRep)) {
+						perror("Erreur dans la reception impossible de déterminer le type\n");
+					}
 			}
 		}
 	}
