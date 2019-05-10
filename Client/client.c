@@ -27,8 +27,6 @@
 #include "protocol.h"
 #include "client.h"
 
-	//Gerer erreur partie, requete, coup
-
 int main(int argc, char **argv) {
 
   int sock,               		// descripteur de la socket locale pour le serveur C
@@ -70,21 +68,23 @@ int main(int argc, char **argv) {
 	strcpy(reqP.nomJoueur, nomJoueur);
 	reqP.piece = sensP;
 
-	// envoi de la requete partie
-	err = send(sock, &reqP, sizeof(TPartieReq), 0);
-	if (err != sizeof(TPartieReq)) {
-		perror("(client) erreur sur le send");
-		shutdown(sock, SHUT_RDWR); close(sock);
-		return -5;
-	}
+	do{
+		// envoi de la requete partie
+		err = send(sock, &reqP, sizeof(TPartieReq), 0);
+		if (err != sizeof(TPartieReq)) {
+			perror("(client) erreur sur le send");
+			shutdown(sock, SHUT_RDWR); close(sock);
+			return -5;
+		}
 
-	// reception de la reponse partie
-	err = recv(sock, &repP, sizeof(TPartieRep), 0);
-	if (err != sizeof(TPartieRep)) {
-		perror("(client) erreur dans la reception");
-		shutdown(sock, SHUT_RDWR); close(sock);
-		return -6;
-	}
+		// reception de la reponse partie
+		err = recv(sock, &repP, sizeof(TPartieRep), 0);
+		if (err != sizeof(TPartieRep)) {
+			perror("(client) erreur dans la reception");
+			shutdown(sock, SHUT_RDWR); close(sock);
+			return -6;
+		}
+	}while(repP.err != ERR_OK);
 
 	// gestion de la validation du sens des pieces
 	if (repP.validSensTete == KO) {
@@ -732,7 +732,7 @@ int coupAdverse(TCoupReq* reqC, TCoupIA* coupIA, int sock, int sockIA){
 }
 
 int validationCoup(char joueur, TCoupRep* repC, int sock){
-	// reception de la validation de mon coup
+	// reception de la validation d'un coup
 	int cont = 1;
 	int err = recv(sock, &repC, sizeof(TCoupRep), 0);
 	if (err != sizeof(TCoupRep)) {
@@ -740,7 +740,8 @@ int validationCoup(char joueur, TCoupRep* repC, int sock){
 		shutdown(sock, SHUT_RDWR); close(sock);
 		return -6;
 	}
-	if (repC->propCoup != CONT) {
+
+	if(repC->err != ERR_OK){
 		cont = 0;
 		switch (repC->validCoup) {
 				case VALID :

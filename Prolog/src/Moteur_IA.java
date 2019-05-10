@@ -62,7 +62,7 @@ public class Moteur_IA {
 				while(cont) {
 					if(tour) {
 
-						//Trouver un coup avec Prolog + gerer si timeout recu
+						//Trouver un coup avec Prolog + gerer si timeout recu -> numPartie++; break;
 
 						//Envoie coup
 						switch(TCoup.getCodeRep()) {
@@ -223,7 +223,8 @@ public class Moteur_IA {
 						if(cr == 0) {
 							TPartie.setCodeReq(CodeReq.INIT);														
 							System.out.println("Fin de la partie !");
-							//Retour au debut !!!
+							numPartie++;
+							break;
 						}else {
 							//Reception coup adverse
 							switch(cr) {
