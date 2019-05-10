@@ -174,4 +174,5 @@ yokai2(Grille,Joueur, Piece, Ind, NewInd, CarteCapturee):-
 /* Pour tester
 deplacement(top, [11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5], NewGrille, CarteCapturee).
 yokai([11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5],top,Sol).
+yokai2([11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5],top,Piece,Ind,NewInd,CarteCapturee).
 */
