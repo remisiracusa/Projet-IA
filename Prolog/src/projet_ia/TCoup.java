@@ -92,7 +92,7 @@ public class TCoup {
 
 	}
 
-	public coordGrille convertCoordGrille(int numCase) {
+	public CoordGrille convertCoordGrille(int numCase) {
 		//System.out.println("Num : " + numCase);
 		numCase--;
 		int ligne = ((numCase / 5) + 1);
@@ -100,7 +100,7 @@ public class TCoup {
 		/*System.out.println("Ligne : " + Ligne.getEnum(ligne));
 		System.out.println("Colonne : " + Colonne.getEnum(colonne));
 		System.out.println();*/
-		return new coordGrille(Ligne.getEnum(ligne), Colonne.getEnum(colonne));
+		return new CoordGrille(Ligne.getEnum(ligne), Colonne.getEnum(colonne));
 	}
 
 	public CodeRep getCodeRep() {
@@ -168,11 +168,11 @@ public class TCoup {
 	}
 }
 
-class coordGrille {
+class CoordGrille {
 	public TCoup.Colonne col;
 	public TCoup.Ligne row;
 
-	public coordGrille(TCoup.Ligne row, TCoup.Colonne col) {
+	public CoordGrille(TCoup.Ligne row, TCoup.Colonne col) {
 		this.row = row;
 		this.col = col;
 	}

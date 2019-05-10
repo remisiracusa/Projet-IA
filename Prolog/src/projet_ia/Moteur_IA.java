@@ -25,6 +25,7 @@ public class Moteur_IA {
 	static boolean cont;
 
 	public static void main(String[] args) {
+		
 		ServerSocket srv; //Socket de connexion
 		Socket sockComm; // Socket de communication
 		TPartie TPartie = new TPartie();
@@ -32,7 +33,7 @@ public class Moteur_IA {
 		numPartie = 1;
 		cont = true;
 		try{
-			srv = new ServerSocket(2323);
+			srv = new ServerSocket(Integer.parseInt(args[0]));
 			sockComm = srv.accept();
 			InputStream is = sockComm.getInputStream();
 			DataInputStream dis = new DataInputStream(is);
@@ -65,7 +66,7 @@ public class Moteur_IA {
 						//Trouver un coup avec Prolog + gerer si timeout recu -> numPartie++; break;
 						TCoup coup = coupProlog();
 						//Envoie coup
-						switch(TCoup.getCodeRep()) {
+						switch(coup.getCodeRep()) {
 						case DEPLACER :
 							dos.writeInt(1);
 							break;
@@ -79,8 +80,9 @@ public class Moteur_IA {
 							break;
 						}
 
-						if(TCoup.getCodeRep() != CodeRep.AUCUN) {
-							switch(sens) {
+						if(coup.getCodeRep() != CodeRep.AUCUN) {
+							coup.setPieceSens(TPartie.getSens());
+							switch(TPartie.getSens()) {
 							case NORD :
 								dos.writeInt(0);
 								break;
@@ -105,6 +107,7 @@ public class Moteur_IA {
 								dos.writeInt(3);
 								break;
 							case ONI :
+								System.out.println("envoie 4");
 								dos.writeInt(4);
 								break;
 							case SUPER_ONI :
@@ -157,7 +160,7 @@ public class Moteur_IA {
 								break;
 							}
 
-							if(TCoup.getCodeRep() == CodeRep.DEPLACER) {
+							if(coup.getCodeRep() == CodeRep.DEPLACER) {
 								switch(coup.getTlgArr()) {
 								case UN :
 									dos.writeInt(0);
@@ -212,6 +215,7 @@ public class Moteur_IA {
 							}
 						}					
 						tour = false;
+						System.out.println("Coup envoye : "+coup.getCodeRep()+" "+coup.getPieceSens()+" "+coup.getPieceType()+" "+coup.getTlgDep()+" "+coup.getTcolDep()+" "+" "+coup.getTlgArr()+" "+coup.getTcolArr()+" "+coup.isEstCapt());
 					}else {					
 						int cr = dis.readInt();
 						//Réinitialisation
@@ -449,7 +453,13 @@ public class Moteur_IA {
 				ind = (SPTerm) results.get("Ind");
 				newInd = (SPTerm) results.get("NewInd");
 				carteCapturee = (SPTerm) results.get("CarteCapturee");
-
+				CoordGrille cg = coup.convertCoordGrille((int) ind.getInteger());
+				CoordGrille cgNewInd = coup.convertCoordGrille((int) newInd.getInteger());
+				
+				coup.setTcolDep(cg.col);
+				coup.setTlgDep(cg.row);
+				coup.setTcolArr(cgNewInd.col);
+				coup.setTlgArr(cgNewInd.row);
 				switch((int) piece.getInteger()){
 				case 1 :
 					coup.setPieceType(Type.KODAMA);
