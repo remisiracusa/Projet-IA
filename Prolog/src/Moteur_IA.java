@@ -10,6 +10,10 @@ import java.net.Socket;
 //pour utiliser les HashMap
 import java.util.*;
 
+import projet_ia.TCoup.CodeRep;
+import projet_ia.TCoup.Colonne;
+import projet_ia.TCoup.Ligne;
+import projet_ia.TCoup.Type;
 import projet_ia.TPartie.CodeReq;
 import projet_ia.TPartie.Sens;
 
@@ -35,52 +39,348 @@ public class Moteur_IA {
 			OutputStream os = sockComm.getOutputStream();
 			DataOutputStream dos = new DataOutputStream(os);
 			System.out.println("Début du serveur");
-			
-			while(numPartie < 3) {
-				//Reception sens des pieces
-				if(dis.readInt() == 0) {
-					TPartie.setCodeReq(CodeReq.INIT);
-				}
-				if(dis.readInt() == 0) {
-					TPartie.setSens(Sens.NORD);
-				}else {
-					TPartie.setSens(Sens.SUD);
-				}
-				numPartie = dis.readInt();
-				if(dis.readInt() == 0) {
-					tour = false;
-				}else {
-					tour = true;
-				}
-				
-				System.out.println("Reçu : "+TPartie.getCodeReq()+" "+TPartie.getSens()+" "+numPartie+" "+tour);
 
+			//Initialisation
+			if(dis.readInt() == 0) {
+				TPartie.setCodeReq(CodeReq.INIT);
+			}
+			if(dis.readInt() == 0) {
+				TPartie.setSens(Sens.NORD);
+			}else {
+				TPartie.setSens(Sens.SUD);
+			}			
+
+			System.out.println("Reçu : "+TPartie.getCodeReq()+" "+TPartie.getSens()+" "+numPartie+" "+tour);
+
+			while(numPartie < 3) {
+				if((numPartie == 1 && TPartie.getSens() == Sens.SUD) || (numPartie == 2 && TPartie.getSens() == Sens.NORD)) {
+					tour = true;
+				}else {
+					tour = false;
+				}
+				//Mise à zero de la grille
 				while(cont) {
 					if(tour) {
-						//Trouver un coup avec Prolog
-			
-						//Envoie coup au client
-						
-						//Si deplacement 
-						dos.writeInt(TCoup.getCodeRep());
-						dos.writeInt(TCoup.getPieceSens());
-						dos.writeInt(TCoup.getPieceType());
-						dos.writeInt(TCoup.getTlgDep());
-						dos.writeInt(TCoup.getTcolDep());
-						dos.writeInt(TCoup.getTlgArr());
-						dos.writeInt(TCoup.getTcolArr());
-						dos.writeInt(TCoup.getEstCapt());		
-						
-						//Si placement d'une piece capturee
-						dos.writeInt(TCoup.getCodeRep());
-						dos.writeInt(TCoup.getPieceSens());
-						dos.writeInt(TCoup.getPieceType());
-						dos.writeInt(TCoup.getTlgDep());
-						dos.writeInt(TCoup.getTcolDep());
-					}else {
-						//Recevoir soit coup adverse soit réinitialisation
+
+						//Trouver un coup avec Prolog + gerer si timeout recu
+
+						//Envoie coup
+						switch(TCoup.getCodeRep()) {
+						case DEPLACER :
+							dos.writeInt(1);
+							break;
+						case DEPOSER :
+							dos.writeInt(2);
+							break;
+						case AUCUN :
+							dos.writeInt(3);
+							break;
+						default :
+							break;
+						}
+
+						if(TCoup.getCodeRep() != CodeRep.AUCUN) {
+							switch(dis.readInt()) {
+							case 0 :
+								TCoup.setPieceSens(Sens.NORD);
+								break;
+							case 1 :
+								TCoup.setPieceSens(Sens.SUD);
+								break;
+							default :
+								break;
+							}
+
+							switch(dis.readInt()) {
+							case 0 :
+								TCoup.setPieceType(Type.KODAMA);
+								break;
+							case 1 :
+								TCoup.setPieceType(Type.KODAMA_SAMOURAI);
+								break;
+							case 2 :
+								TCoup.setPieceType(Type.KIRIN);
+								break;
+							case 3 :
+								TCoup.setPieceType(Type.KOROPOKKURU);
+								break;
+							case 4 :
+								TCoup.setPieceType(Type.ONI);
+								break;
+							case 5 :
+								TCoup.setPieceType(Type.SUPER_ONI);
+								break;
+							default :
+								break;
+							}
+
+							switch(dis.readInt()) {
+							case 0 :
+								TCoup.setTlgDep(Ligne.UN);
+								break;
+							case 1 :
+								TCoup.setTlgDep(Ligne.DEUX);
+								break;
+							case 2 :
+								TCoup.setTlgDep(Ligne.TROIS);
+								break;
+							case 3 :
+								TCoup.setTlgDep(Ligne.QUATRE);
+								break;
+							case 4 :
+								TCoup.setTlgDep(Ligne.CINQ);
+								break;
+							case 5 :
+								TCoup.setTlgDep(Ligne.SIX);
+								break;
+							default :
+								break;
+							}
+
+							switch(dis.readInt()) {
+							case 0 :
+								TCoup.setTcolDep(Colonne.A);
+								break;
+							case 1 :
+								TCoup.setTcolDep(Colonne.B);
+								break;
+							case 2 :
+								TCoup.setTcolDep(Colonne.C);
+								break;
+							case 3 :
+								TCoup.setTcolDep(Colonne.D);
+								break;
+							case 4 :
+								TCoup.setTcolDep(Colonne.E);
+								break;
+							default :
+								break;
+							}
+
+							if(TCoup.getCodeRep() == CodeRep.DEPLACER) {
+								switch(dis.readInt()) {
+								case 0 :
+									TCoup.setTlgArr(Ligne.UN);
+									break;
+								case 1 :
+									TCoup.setTlgArr(Ligne.DEUX);
+									break;
+								case 2 :
+									TCoup.setTlgArr(Ligne.TROIS);
+									break;
+								case 3 :
+									TCoup.setTlgArr(Ligne.QUATRE);
+									break;
+								case 4 :
+									TCoup.setTlgArr(Ligne.CINQ);
+									break;
+								case 5 :
+									TCoup.setTlgArr(Ligne.SIX);
+									break;
+								default :
+									break;
+								}
+
+								switch(dis.readInt()) {
+								case 0 :
+									TCoup.setTcolArr(Colonne.A);
+									break;
+								case 1 :
+									TCoup.setTcolArr(Colonne.B);
+									break;
+								case 2 :
+									TCoup.setTcolArr(Colonne.C);
+									break;
+								case 3 :
+									TCoup.setTcolArr(Colonne.D);
+									break;
+								case 4 :
+									TCoup.setTcolArr(Colonne.E);
+									break;
+								default :
+									break;
+								}
+
+								switch(dis.readInt()) {
+								case 0 :
+									TCoup.setEstCapt(false);
+									break;
+								case 1 :
+									TCoup.setEstCapt(true);
+									break;
+								default :
+									break;
+								}
+								//Deplacer sur grille
+							}else {
+								//Deposer sur grille
+							}
+						}					
+						tour = false;
+					}else {					
+						int cr = dis.readInt();
+						//Réinitialisation
+						if(cr == 0) {
+							TPartie.setCodeReq(CodeReq.INIT);														
+							System.out.println("Fin de la partie !");
+							//Retour au debut !!!
+						}else {
+							//Reception coup adverse
+							switch(cr) {
+							case 1 :
+								TCoup.setCodeRep(CodeRep.DEPLACER);
+								break;
+							case 2 :
+								TCoup.setCodeRep(CodeRep.DEPOSER);
+								break;
+							case 3 :
+								TCoup.setCodeRep(CodeRep.AUCUN);
+								break;
+							default :
+								break;
+							}
+							if(TCoup.getCodeRep() != CodeRep.AUCUN) {
+								switch(dis.readInt()) {
+								case 0 :
+									TCoup.setPieceType(Type.KODAMA);
+									break;
+								case 1 :
+									TCoup.setPieceType(Type.KODAMA_SAMOURAI);
+									break;
+								case 2 :
+									TCoup.setPieceType(Type.KIRIN);
+									break;
+								case 3 :
+									TCoup.setPieceType(Type.KOROPOKKURU);
+									break;
+								case 4 :
+									TCoup.setPieceType(Type.ONI);
+									break;
+								case 5 :
+									TCoup.setPieceType(Type.SUPER_ONI);
+									break;
+								default :
+									break;
+								}
+
+								switch(dis.readInt()) {
+								case 0 :
+									TCoup.setPieceSens(Sens.NORD);
+									break;
+								case 1 :
+									TCoup.setPieceSens(Sens.SUD);
+									break;
+								default :
+									break;
+								}
+
+								switch(dis.readInt()) {
+								case 0 :
+									TCoup.setTcolDep(Colonne.A);
+									break;
+								case 1 :
+									TCoup.setTcolDep(Colonne.B);
+									break;
+								case 2 :
+									TCoup.setTcolDep(Colonne.C);
+									break;
+								case 3 :
+									TCoup.setTcolDep(Colonne.D);
+									break;
+								case 4 :
+									TCoup.setTcolDep(Colonne.E);
+									break;
+								default :
+									break;
+								}
+
+								switch(dis.readInt()) {
+								case 0 :
+									TCoup.setTlgDep(Ligne.UN);
+									break;
+								case 1 :
+									TCoup.setTlgDep(Ligne.DEUX);
+									break;
+								case 2 :
+									TCoup.setTlgDep(Ligne.TROIS);
+									break;
+								case 3 :
+									TCoup.setTlgDep(Ligne.QUATRE);
+									break;
+								case 4 :
+									TCoup.setTlgDep(Ligne.CINQ);
+									break;
+								case 5 :
+									TCoup.setTlgDep(Ligne.SIX);
+									break;
+								default :
+									break;
+								}
+
+								if(TCoup.getCodeRep() == CodeRep.DEPLACER) {
+									switch(dis.readInt()) {
+									case 0 :
+										TCoup.setTcolArr(Colonne.A);
+										break;
+									case 1 :
+										TCoup.setTcolArr(Colonne.B);
+										break;
+									case 2 :
+										TCoup.setTcolArr(Colonne.C);
+										break;
+									case 3 :
+										TCoup.setTcolArr(Colonne.D);
+										break;
+									case 4 :
+										TCoup.setTcolArr(Colonne.E);
+										break;
+									default :
+										break;
+									}
+
+									switch(dis.readInt()) {
+									case 0 :
+										TCoup.setTlgArr(Ligne.UN);
+										break;
+									case 1 :
+										TCoup.setTlgArr(Ligne.DEUX);
+										break;
+									case 2 :
+										TCoup.setTlgArr(Ligne.TROIS);
+										break;
+									case 3 :
+										TCoup.setTlgArr(Ligne.QUATRE);
+										break;
+									case 4 :
+										TCoup.setTlgArr(Ligne.CINQ);
+										break;
+									case 5 :
+										TCoup.setTlgArr(Ligne.SIX);
+										break;
+									default :
+										break;
+									}
+
+									switch(dis.readInt()) {
+									case 0 :
+										TCoup.setEstCapt(false);
+										break;
+									case 1 :
+										TCoup.setEstCapt(true);
+										break;
+									default :
+										break;
+									}
+									//Deplacer sur grille
+								}else if(TCoup.getCodeRep() == CodeRep.DEPOSER) {
+									//Deposer sur grille
+								}
+							}
+						}
+						tour = true;
 					}
 				}
+				numPartie++;
 			}
 			dos.close();
 			os.close();
@@ -188,7 +488,7 @@ public class Moteur_IA {
 		System.out.println("End of jSicstus");
 		System.out.println("Bye bye");*/
 	}
-	
+
 	public static String saisieClavier() {
 
 		// declaration du buffer clavier

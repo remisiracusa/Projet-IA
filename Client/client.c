@@ -28,7 +28,6 @@
 #include "client.h"
 
 	//Gerer erreur partie, requete, coup
-	//Gerer timeout
 
 int main(int argc, char **argv) {
 
@@ -95,6 +94,28 @@ int main(int argc, char **argv) {
 			sensP = SUD;
 		}
 	}
+
+	// initialisation IA
+	if(sensP == NORD){
+		partieIA.sens = htonl(T_NORD);
+	}else{
+		partieIA.sens = htonl(T_SUD);
+	}
+	partieIA.codeReq = htonl(INIT);
+
+	err = send(sockIA, &partieIA.codeReq, sizeof(int), 0);
+	if (err != sizeof(int)) {
+		perror("(client) erreur sur le send");
+		shutdown(sockIA, SHUT_RDWR); close(sockIA);
+		return -5;
+	}
+
+	err = send(sockIA, &partieIA.sens, sizeof(int), 0);
+	if (err != sizeof(int)) {
+		perror("(client) erreur sur le send");
+		shutdown(sockIA, SHUT_RDWR); close(sockIA);
+		return -5;
+	}
 	
 	// gestion de deux parties de jeu
 	while (numPartie < 3) {
@@ -104,57 +125,24 @@ int main(int argc, char **argv) {
 			tour = 0;
 		}
 
-		// initialisation IA
-		if(sensP == NORD){
-			partieIA.sens = htonl(T_NORD);
-		}else{
-			partieIA.sens = htonl(T_SUD);
-		}
-		partieIA.codeReq = htonl(INIT);
-		partieIA.numPartie = htonl(numPartie);
-		partieIA.tour = htonl(tour);
-
-		err = send(sockIA, &partieIA.codeReq, sizeof(int), 0);
-		if (err != sizeof(int)) {
-			perror("(client) erreur sur le send");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -5;
-		}
-
-		err = send(sockIA, &partieIA.sens, sizeof(int), 0);
-		if (err != sizeof(int)) {
-			perror("(client) erreur sur le send");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -5;
-		}
-
-		err = send(sockIA, &partieIA.numPartie, sizeof(int), 0);
-		if (err != sizeof(int)) {
-			perror("(client) erreur sur le send");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -5;
-		}
-
-		err = send(sockIA, &partieIA.tour, sizeof(int), 0);
-		if (err != sizeof(int)) {
-			perror("(client) erreur sur le send");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -5;
-		}
-
 		// gestion de la partie en cours
 		while (cont) {
 			if (tour) {
 
 				// mon tour de jeu
 				err = jouerPiece(&reqC, &repC, &coupIA, sock, sockIA, numPartie);
-				if(err != 0){
+				if(err != 0 && err != -1){
 					return err;
+				}else if(err == -1){
+					// Timeout recu
+					cont = 0;
+				}else{
+					cont = validationCoup('M', &repC, sock);
+					if(cont != 0 && cont != 1){
+						return cont;
+					}
 				}
-				cont = validationCoup('M', &repC, sock);
-				if(cont != 0 && cont != 1){
-					return cont;
-				}
+				
 				tour = 0;
 			}else{
 
@@ -173,6 +161,14 @@ int main(int argc, char **argv) {
 			}
 		}
 		numPartie++;
+		partieIA.codeReq = htonl(INIT);
+
+		err = send(sockIA, &partieIA.codeReq, sizeof(int), 0);
+		if (err != sizeof(int)) {
+			perror("(client) erreur sur le send");
+			shutdown(sockIA, SHUT_RDWR); close(sockIA);
+			return -5;
+		}
 	}
 
 	printf("(client) arret de la communication\n");
@@ -186,7 +182,8 @@ int main(int argc, char **argv) {
 }
 
 int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int sockIA, int numPartie){
-
+	int err;
+	int err2;
 	reqC->idRequest = COUP;
 	reqC->numPartie = numPartie;
 	reqC->typeCoup = DEPLACER;
@@ -194,7 +191,16 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
 	reqC->piece.typePiece = ONI;
 
 	// Recevoir un coup de l'IA
-	int err = recv(sockIA, &coupIA->codeRep, sizeof(int), MSG_WAITALL);	
+
+	do{
+		// verification si timeout recu
+		err2 = recv(sock, &repC, sizeof(TCoupRep), MSG_PEEK);
+		if(err2 == sizeof(TCoupRep)){
+			return -1;
+		}
+		err = recv(sockIA, &coupIA->codeRep, sizeof(int), MSG_PEEK);
+	}while(err != sizeof(int));
+
 	if (err != sizeof(int)) {
 		perror("(client) erreur dans la reception");
 		shutdown(sockIA, SHUT_RDWR); close(sockIA);
@@ -202,11 +208,16 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
 	}
 	coupIA->codeRep = htonl(coupIA->codeRep);
 
-	//Si deplacement
-	if (coupIA->codeRep == T_DEPLACER) {
-		reqC->typeCoup = DEPLACER;
+	if (coupIA->codeRep != T_AUCUN) {
+		do{
+			// verification si timeout recu
+			err2 = recv(sock, &repC, sizeof(TCoupRep), MSG_PEEK);
+			if(err2 == sizeof(TCoupRep)){
+				return -1;
+			}
+			err = recv(sockIA, &coupIA->sensPiece, sizeof(int), MSG_PEEK);
+		}while(err != sizeof(int));
 
-		err = recv(sockIA, &coupIA->sensPiece, sizeof(int), MSG_WAITALL);
 		if (err != sizeof(int)) {
 			perror("(client) erreur dans la reception");
 			shutdown(sockIA, SHUT_RDWR); close(sockIA);
@@ -218,45 +229,61 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
 		}else{
 			reqC->piece.sensTetePiece = SUD;
 		}
-		
-		err = recv(sockIA, &coupIA->typePiece, sizeof(int), MSG_WAITALL);
+
+		do{
+			// verification si timeout recu
+			err2 = recv(sock, &repC, sizeof(TCoupRep), MSG_PEEK);
+			if(err2 == sizeof(TCoupRep)){
+				return -1;
+			}
+			err = recv(sockIA, &coupIA->typePiece, sizeof(int), MSG_PEEK);
+		}while(err != sizeof(int));
+
 		if (err != sizeof(int)) {
 			perror("(client) erreur dans la reception");
 			shutdown(sockIA, SHUT_RDWR); close(sockIA);
 			return -6;
 		}
 		coupIA->typePiece = ntohl(coupIA->typePiece);
-		
+	
 		switch (coupIA->typePiece) {
-				case T_KODAMA:
-					reqC->piece.typePiece = KODAMA;
-					break;
+			case T_KODAMA:
+				reqC->piece.typePiece = KODAMA;
+				break;
 
-				case T_KODAMA_SAMOURAI:
-					reqC->piece.typePiece = KODAMA_SAMOURAI;
-					break;
+			case T_KODAMA_SAMOURAI:
+				reqC->piece.typePiece = KODAMA_SAMOURAI;
+				break;
 
-				case T_KIRIN:
-					reqC->piece.typePiece = KIRIN;
-					break;
+			case T_KIRIN:
+				reqC->piece.typePiece = KIRIN;
+				break;
 
-				case T_KOROPOKKURU:
-					reqC->piece.typePiece = KOROPOKKURU;
-					break;
+			case T_KOROPOKKURU:
+				reqC->piece.typePiece = KOROPOKKURU;
+				break;
 
-				case T_ONI:
-					reqC->piece.typePiece = ONI;
-					break;
+			case T_ONI:
+				reqC->piece.typePiece = ONI;
+				break;
 
-				case T_SUPER_ONI:
-					reqC->piece.typePiece = SUPER_ONI;
-					break;
+			case T_SUPER_ONI:
+				reqC->piece.typePiece = SUPER_ONI;
+				break;
 
-				default :
-					break;
+			default :
+				break;
 		}
 
-		err = recv(sockIA, &coupIA->TlgDep, sizeof(int), MSG_WAITALL);
+		do{
+			// verification si timeout recu
+			err2 = recv(sock, &repC, sizeof(TCoupRep), MSG_PEEK);
+			if(err2 == sizeof(TCoupRep)){
+				return -1;
+			}
+			err = recv(sockIA, &coupIA->TlgDep, sizeof(int), MSG_PEEK);
+		}while(err != sizeof(int));
+
 		if (err != sizeof(int)) {
 			perror("(client) erreur dans la reception");
 			shutdown(sockIA, SHUT_RDWR); close(sockIA);
@@ -264,8 +291,7 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
 		}
 
 		coupIA->TlgDep = ntohl(coupIA->TlgDep);
-
-		switch (coupIA->TlgDep) {
+			switch (coupIA->TlgDep) {
 				case T_A:
 					reqC->params.deplPiece.caseDep.c = A;
 					break;
@@ -290,7 +316,15 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
 					break;
 		}
 
-		err = recv(sockIA, &coupIA->TcolDep, sizeof(int), MSG_WAITALL);
+		do{
+			// verification si timeout recu
+			err2 = recv(sock, &repC, sizeof(TCoupRep), MSG_PEEK);
+			if(err2 == sizeof(TCoupRep)){
+				return -1;
+			}
+			err = recv(sockIA, &coupIA->TcolDep, sizeof(int), MSG_PEEK);
+		}while(err != sizeof(int));
+
 		if (err != sizeof(int)) {
 			perror("(client) erreur dans la reception");
 			shutdown(sockIA, SHUT_RDWR); close(sockIA);
@@ -300,255 +334,153 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
 		coupIA->TcolDep = ntohl(coupIA->TcolDep);
 
 		switch (coupIA->TcolDep) {
-				case T_UN:
-					reqC->params.deplPiece.caseDep.l = UN;
-					break;
+			case T_UN:
+				reqC->params.deplPiece.caseDep.l = UN;
+				break;
 
-				case T_DEUX:
-					reqC->params.deplPiece.caseDep.l = DEUX;
-					break;
+			case T_DEUX:
+				reqC->params.deplPiece.caseDep.l = DEUX;
+				break;
 
-				case T_TROIS:
-					reqC->params.deplPiece.caseDep.l = TROIS;
-					break;
+			case T_TROIS:
+				reqC->params.deplPiece.caseDep.l = TROIS;
+				break;
 
-				case T_QUATRE:
-					reqC->params.deplPiece.caseDep.l = QUATRE;
-					break;
+			case T_QUATRE:
+				reqC->params.deplPiece.caseDep.l = QUATRE;
+				break;
 
-				case T_CINQ:
-					reqC->params.deplPiece.caseDep.l = CINQ;
-					break;
+			case T_CINQ:
+				reqC->params.deplPiece.caseDep.l = CINQ;
+				break;
 
-				case T_SIX:
-					reqC->params.deplPiece.caseDep.l = SIX;
-					break;
+			case T_SIX:
+				reqC->params.deplPiece.caseDep.l = SIX;
+				break;
 
-				default :
-					break;
+			default :
+				break;
 		}
 
-		err = recv(sockIA, &coupIA->TlgArr, sizeof(int), MSG_WAITALL);
-		if (err != sizeof(int)) {
-			perror("(client) erreur dans la reception");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -6;
+		if (coupIA->codeRep == T_DEPLACER) {
+			reqC->typeCoup = DEPLACER;
+			do{
+				// verification si timeout recu
+				err2 = recv(sock, &repC, sizeof(TCoupRep), MSG_PEEK);
+				if(err2 == sizeof(TCoupRep)){
+					return -1;
+				}
+				err = recv(sockIA, &coupIA->TlgArr, sizeof(int), MSG_PEEK);
+			}while(err != sizeof(int));
+
+			if (err != sizeof(int)) {
+				perror("(client) erreur dans la reception");
+				shutdown(sockIA, SHUT_RDWR); close(sockIA);
+				return -6;
+			}
+
+			coupIA->TlgArr = ntohl(coupIA->TlgArr);
+
+			switch (coupIA->TlgArr) {
+					case T_A:
+						reqC->params.deplPiece.caseArr.c = A;
+						break;
+
+					case T_B:
+						reqC->params.deplPiece.caseArr.c = B;
+						break;
+
+					case T_C:
+						reqC->params.deplPiece.caseArr.c = C;
+						break;
+
+					case T_D:
+						reqC->params.deplPiece.caseArr.c = D;
+						break;
+
+					case T_E:
+						reqC->params.deplPiece.caseArr.c = E;
+						break;
+
+					default :
+						break;
+			}
+
+			do{
+				// verification si timeout recu
+				err2 = recv(sock, &repC, sizeof(TCoupRep), MSG_PEEK);
+				if(err2 == sizeof(TCoupRep)){
+					return -1;
+				}
+				err = recv(sockIA, &coupIA->TcolArr, sizeof(int), MSG_PEEK);
+			}while(err != sizeof(int));
+
+			if (err != sizeof(int)) {
+				perror("(client) erreur dans la reception");
+				shutdown(sockIA, SHUT_RDWR); close(sockIA);
+				return -6;
+			}
+
+			coupIA->TcolArr = ntohl(coupIA->TcolArr);
+
+			switch (coupIA->TcolArr) {
+					case T_UN:
+						reqC->params.deplPiece.caseArr.l = UN;
+						break;
+
+					case T_DEUX:
+						reqC->params.deplPiece.caseArr.l = DEUX;
+						break;
+
+					case T_TROIS:
+						reqC->params.deplPiece.caseArr.l = TROIS;
+						break;
+
+					case T_QUATRE:
+						reqC->params.deplPiece.caseArr.l = QUATRE;
+						break;
+
+					case T_CINQ:
+						reqC->params.deplPiece.caseArr.l = CINQ;
+						break;
+
+					case T_SIX:
+						reqC->params.deplPiece.caseArr.l = SIX;
+						break;
+
+					default :
+						break;
+			}
+
+			do{
+				// verification si timeout recu
+				err2 = recv(sock, &repC, sizeof(TCoupRep), MSG_PEEK);
+				if(err2 == sizeof(TCoupRep)){
+					return -1;
+				}
+				err = recv(sockIA, &coupIA->estCapt, sizeof(int), MSG_PEEK);
+			}while(err != sizeof(int));
+
+			if (err != sizeof(int)) {
+				perror("(client) erreur dans la reception");
+				shutdown(sockIA, SHUT_RDWR); close(sockIA);
+				return -6;
+			}
+
+			coupIA->estCapt = ntohl(coupIA->estCapt);
+			if (coupIA->estCapt) {
+				reqC->params.deplPiece.estCapt = true;
+			}else{
+				reqC->params.deplPiece.estCapt = false;
+			}
+
+		}else if (coupIA->codeRep == T_DEPLACER) {
+			reqC->typeCoup = DEPOSER;
 		}
-
-		coupIA->TlgArr = ntohl(coupIA->TlgArr);
-
-		switch (coupIA->TlgArr) {
-				case T_A:
-					reqC->params.deplPiece.caseArr.c = A;
-					break;
-
-				case T_B:
-					reqC->params.deplPiece.caseArr.c = B;
-					break;
-
-				case T_C:
-					reqC->params.deplPiece.caseArr.c = C;
-					break;
-
-				case T_D:
-					reqC->params.deplPiece.caseArr.c = D;
-					break;
-
-				case T_E:
-					reqC->params.deplPiece.caseArr.c = E;
-					break;
-
-				default :
-					break;
-		}
-
-		err = recv(sockIA, &coupIA->TcolArr, sizeof(int), MSG_WAITALL);
-		if (err != sizeof(int)) {
-			perror("(client) erreur dans la reception");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -6;
-		}
-
-		coupIA->TcolArr = ntohl(coupIA->TcolArr);
-
-		switch (coupIA->TcolArr) {
-				case T_UN:
-					reqC->params.deplPiece.caseArr.l = UN;
-					break;
-
-				case T_DEUX:
-					reqC->params.deplPiece.caseArr.l = DEUX;
-					break;
-
-				case T_TROIS:
-					reqC->params.deplPiece.caseArr.l = TROIS;
-					break;
-
-				case T_QUATRE:
-					reqC->params.deplPiece.caseArr.l = QUATRE;
-					break;
-
-				case T_CINQ:
-					reqC->params.deplPiece.caseArr.l = CINQ;
-					break;
-
-				case T_SIX:
-					reqC->params.deplPiece.caseArr.l = SIX;
-					break;
-
-				default :
-					break;
-		}
-
-		err = recv(sockIA, &coupIA->estCapt, sizeof(int), MSG_WAITALL);
-		if (err != sizeof(int)) {
-			perror("(client) erreur dans la reception");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -6;
-		}
-
-		coupIA->estCapt = ntohl(coupIA->estCapt);
-		if (coupIA->estCapt) {
-			reqC->params.deplPiece.estCapt = true;
-		}else{
-			reqC->params.deplPiece.estCapt = false;
-		}
-	
-	}else if (coupIA->codeRep == T_DEPOSER) {
-		reqC->typeCoup = DEPOSER;
-		
-		err = recv(sockIA, &coupIA->sensPiece, sizeof(int), MSG_WAITALL);
-		if (err != sizeof(int)) {
-			perror("(client) erreur dans la reception");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -6;
-		}
-
-		coupIA->sensPiece = ntohl(coupIA->sensPiece);
-		if (coupIA->sensPiece == 0) {
-			reqC->piece.sensTetePiece = NORD;
-		}else{
-			reqC->piece.sensTetePiece = SUD;
-		}
-
-		err = recv(sockIA, &coupIA->typePiece, sizeof(int), MSG_WAITALL);
-		if (err != sizeof(int)) {
-			perror("(client) erreur dans la reception");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -6;
-		}
-
-		coupIA->typePiece = ntohl(coupIA->typePiece);
-		
-		switch (coupIA->typePiece) {
-				case T_KODAMA:
-					reqC->piece.typePiece = KODAMA;
-					break;
-
-				case T_KODAMA_SAMOURAI:
-					reqC->piece.typePiece = KODAMA_SAMOURAI;
-					break;
-
-				case T_KIRIN:
-					reqC->piece.typePiece = KIRIN;
-					break;
-
-				case T_KOROPOKKURU:
-					reqC->piece.typePiece = KOROPOKKURU;
-					break;
-
-				case T_ONI:
-					reqC->piece.typePiece = ONI;
-					break;
-
-				case T_SUPER_ONI:
-					reqC->piece.typePiece = SUPER_ONI;
-					break;
-
-				default :
-					break;
-		}
-
-		err = recv(sockIA, &coupIA->TlgDep, sizeof(int), MSG_WAITALL);
-		if (err != sizeof(int)) {
-			perror("(client) erreur dans la reception");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -6;
-		}
-
-		coupIA->TlgDep = ntohl(coupIA->TlgDep);
-
-		switch (coupIA->TlgDep) {
-				case T_UN:
-					reqC->params.deposerPiece.l = UN;
-					break;
-
-				case T_DEUX:
-					reqC->params.deposerPiece.l = DEUX;
-					break;
-
-				case T_TROIS:
-					reqC->params.deposerPiece.l = TROIS;
-					break;
-
-				case T_QUATRE:
-					reqC->params.deposerPiece.l = QUATRE;
-					break;
-
-				case T_CINQ:
-					reqC->params.deposerPiece.l = CINQ;
-					break;
-
-				case T_SIX:
-					reqC->params.deposerPiece.l = SIX;
-					break;
-
-				default :
-					break;
-		}
-
-		err = recv(sockIA, &coupIA->TcolDep, sizeof(int), MSG_WAITALL);
-		if (err != sizeof(int)) {
-			perror("(client) erreur dans la reception");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -6;
-		}
-
-		coupIA->TcolDep = ntohl(coupIA->TcolDep);
-
-		switch (coupIA->TcolDep) {
-				case T_A:
-					reqC->params.deposerPiece.c = A;
-					break;
-
-				case T_B:
-					reqC->params.deposerPiece.c = B;
-					break;
-
-				case T_C:
-					reqC->params.deposerPiece.c = C;
-					break;
-
-				case T_D:
-					reqC->params.deposerPiece.c = D;
-					break;
-
-				case T_E:
-					reqC->params.deposerPiece.c = E;
-					break;
-
-				default :
-					break;
-		}
-
-		
 	}else{
-	//Aucun
+		// Aucun
 		reqC->typeCoup = AUCUN;
 	}
-
-	// gerer le cas ou un timeout est recu
-	
 
 	// envoi de la requete coup au serveur
 	err = send(sock, &reqC, sizeof(TCoupReq), 0);
@@ -588,7 +520,15 @@ int coupAdverse(TCoupReq* reqC, TCoupIA* coupIA, int sock, int sockIA){
 			break;
 	}
 
-	switch(reqC->piece.typePiece) {
+	err = send(sockIA, &coupIA->codeRep, sizeof(int), 0);
+	if (err != sizeof(int)) {
+		perror("(client) erreur sur le send");
+		shutdown(sockIA, SHUT_RDWR); close(sockIA);
+		return -5;
+	}
+	
+	if(reqC->typeCoup != AUCUN){
+		switch(reqC->piece.typePiece) {
 			case KODAMA:
 				coupIA->typePiece = htonl(T_KODAMA);
 				break;
@@ -615,150 +555,82 @@ int coupAdverse(TCoupReq* reqC, TCoupIA* coupIA, int sock, int sockIA){
 
 			default :
 				break;
-	}
+		}
 
-	if (reqC->piece.sensTetePiece == NORD) {
-		coupIA->sensPiece = htonl(T_NORD);
-	}else{
-		coupIA->sensPiece = htonl(T_SUD);
-	}
+		if (reqC->piece.sensTetePiece == NORD) {
+			coupIA->sensPiece = htonl(T_NORD);
+		}else{
+			coupIA->sensPiece = htonl(T_SUD);
+		}
 
-	err = send(sockIA, &coupIA->codeRep, sizeof(int), 0);
-	if (err != sizeof(int)) {
-		perror("(client) erreur sur le send");
-		shutdown(sockIA, SHUT_RDWR); close(sockIA);
-		return -5;
-	}
+		err = send(sockIA, &coupIA->typePiece, sizeof(int), 0);
+		if (err != sizeof(int)) {
+			perror("(client) erreur sur le send");
+			shutdown(sockIA, SHUT_RDWR); close(sockIA);
+			return -5;
+		}
 
-	err = send(sockIA, &coupIA->typePiece, sizeof(int), 0);
-	if (err != sizeof(int)) {
-		perror("(client) erreur sur le send");
-		shutdown(sockIA, SHUT_RDWR); close(sockIA);
-		return -5;
-	}
+		err = send(sockIA, &coupIA->sensPiece, sizeof(int), 0);
+		if (err != sizeof(int)) {
+			perror("(client) erreur sur le send");
+			shutdown(sockIA, SHUT_RDWR); close(sockIA);
+			return -5;
+		}
 
-	err = send(sockIA, &coupIA->sensPiece, sizeof(int), 0);
-	if (err != sizeof(int)) {
-		perror("(client) erreur sur le send");
-		shutdown(sockIA, SHUT_RDWR); close(sockIA);
-		return -5;
-	}
-
-	if (coupIA->codeRep == T_DEPLACER) {
 		switch (reqC->params.deplPiece.caseDep.c) {
-				case A:
-					coupIA->TcolDep = htonl(T_A);
-					break;
+			case A:
+				coupIA->TcolDep = htonl(T_A);
+				break;
 
-				case B:
-					coupIA->TcolDep = htonl(T_B);
-					break;
+			case B:
+				coupIA->TcolDep = htonl(T_B);
+				break;
 
-				case C:
-					coupIA->TcolDep = htonl(T_C);
-					break;
+			case C:
+				coupIA->TcolDep = htonl(T_C);
+				break;
 
-				case D:
-					coupIA->TcolDep = htonl(T_D);
-					break;
+			case D:
+				coupIA->TcolDep = htonl(T_D);
+				break;
 
-				case E:
-					coupIA->TcolDep = htonl(T_E);
-					break;
+			case E:
+				coupIA->TcolDep = htonl(T_E);
+				break;
 
-				default :
-					break;
+			default :
+				break;
 		}
 
 		switch (reqC->params.deplPiece.caseDep.l) {
-				case UN:
-					coupIA->TlgDep = htonl(T_UN);
-					break;
+			case UN:
+				coupIA->TlgDep = htonl(T_UN);
+				break;
 
-				case DEUX:
-					coupIA->TlgDep = htonl(T_DEUX);
-					break;
+			case DEUX:
+				coupIA->TlgDep = htonl(T_DEUX);
+				break;
 
-				case TROIS:
-					coupIA->TlgDep = htonl(T_TROIS);
-					break;
+			case TROIS:
+				coupIA->TlgDep = htonl(T_TROIS);
+				break;
 
-				case QUATRE:
-					coupIA->TlgDep = htonl(T_QUATRE);
-					break;
+			case QUATRE:
+				coupIA->TlgDep = htonl(T_QUATRE);
+				break;
 
-				case CINQ:
-					coupIA->TlgDep = htonl(T_CINQ);
-					break;
+			case CINQ:
+				coupIA->TlgDep = htonl(T_CINQ);
+				break;
 
-				case SIX:
-					coupIA->TlgDep = htonl(T_SIX);
-					break;
+			case SIX:
+				coupIA->TlgDep = htonl(T_SIX);
+				break;
 
-				default :
-					break;
+			default :
+				break;
 		}
-
-		switch (reqC->params.deplPiece.caseArr.c) {
-				case A:
-					coupIA->TcolArr = htonl(T_A);
-					break;
-
-				case B:
-					coupIA->TcolArr = htonl(T_B);
-					break;
-
-				case C:
-					coupIA->TcolArr = htonl(T_C);
-					break;
-
-				case D:
-					coupIA->TcolArr = htonl(T_D);
-					break;
-
-				case E:
-					coupIA->TcolArr = htonl(T_E);
-					break;
-
-				default :
-					break;
-		}
-
-		switch (reqC->params.deplPiece.caseArr.l) {
-				case UN:
-					coupIA->TlgArr = htonl(T_UN);
-					break;
-
-				case DEUX:
-					coupIA->TlgArr = htonl(T_DEUX);
-					break;
-
-				case TROIS:
-					coupIA->TlgArr = htonl(T_TROIS);
-					break;
-
-				case QUATRE:
-					coupIA->TlgArr = htonl(T_QUATRE);
-					break;
-
-				case CINQ:
-					coupIA->TlgArr = htonl(T_CINQ);
-					break;
-
-				case SIX:
-					coupIA->TlgArr = htonl(T_SIX);
-					break;
-
-				default :
-					break;
-		}
-
-		if (reqC->params.deplPiece.estCapt) {
-			coupIA->estCapt = htonl(T_O);
-		}else{
-			coupIA->estCapt = htonl(T_N);
-		}
-
+			
 		err = send(sockIA, &coupIA->TcolDep, sizeof(int), 0);
 		if (err != sizeof(int)) {
 			perror("(client) erreur sur le send");
@@ -773,94 +645,87 @@ int coupAdverse(TCoupReq* reqC, TCoupIA* coupIA, int sock, int sockIA){
 			return -5;
 		}
 
-		err = send(sockIA, &coupIA->TcolArr, sizeof(int), 0);
-		if (err != sizeof(int)) {
-			perror("(client) erreur sur le send");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -5;
-		}
+		if (coupIA->codeRep == T_DEPLACER) {
+			switch (reqC->params.deplPiece.caseArr.c) {
+					case A:
+						coupIA->TcolArr = htonl(T_A);
+						break;
 
-		err = send(sockIA, &coupIA->TlgArr, sizeof(int), 0);
-		if (err != sizeof(int)) {
-			perror("(client) erreur sur le send");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -5;
-		}
+					case B:
+						coupIA->TcolArr = htonl(T_B);
+						break;
 
-		err = send(sockIA, &coupIA->estCapt, sizeof(int), 0);
-		if (err != sizeof(int)) {
-			perror("(client) erreur sur le send");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -5;
-		}
+					case C:
+						coupIA->TcolArr = htonl(T_C);
+						break;
 
-	}else if (coupIA->codeRep == T_DEPOSER) {
-		switch (reqC->params.deposerPiece.c) {
-				case A:
-					coupIA->TcolDep = htonl(T_A);
-					break;
+					case D:
+						coupIA->TcolArr = htonl(T_D);
+						break;
 
-				case B:
-					coupIA->TcolDep = htonl(T_B);
-					break;
+					case E:
+						coupIA->TcolArr = htonl(T_E);
+						break;
 
-				case C:
-					coupIA->TcolDep = htonl(T_C);
-					break;
+					default :
+						break;
+			}
 
-				case D:
-					coupIA->TcolDep = htonl(T_D);
-					break;
+			switch (reqC->params.deplPiece.caseArr.l) {
+					case UN:
+						coupIA->TlgArr = htonl(T_UN);
+						break;
 
-				case E:
-					coupIA->TcolDep = htonl(T_E);
-					break;
+					case DEUX:
+						coupIA->TlgArr = htonl(T_DEUX);
+						break;
 
-				default :
-					break;
-		}
+					case TROIS:
+						coupIA->TlgArr = htonl(T_TROIS);
+						break;
 
-		switch (reqC->params.deposerPiece.l) {
-				case UN:
-					coupIA->TlgDep = htonl(T_UN);
-					break;
+					case QUATRE:
+						coupIA->TlgArr = htonl(T_QUATRE);
+						break;
 
-				case DEUX:
-					coupIA->TlgDep = htonl(T_DEUX);
-					break;
+					case CINQ:
+						coupIA->TlgArr = htonl(T_CINQ);
+						break;
 
-				case TROIS:
-					coupIA->TlgDep = htonl(T_TROIS);
-					break;
+					case SIX:
+						coupIA->TlgArr = htonl(T_SIX);
+						break;
 
-				case QUATRE:
-					coupIA->TlgDep = htonl(T_QUATRE);
-					break;
+					default :
+						break;
+			}
 
-				case CINQ:
-					coupIA->TlgDep = htonl(T_CINQ);
-					break;
+			if (reqC->params.deplPiece.estCapt) {
+				coupIA->estCapt = htonl(T_O);
+			}else{
+				coupIA->estCapt = htonl(T_N);
+			}
 
-				case SIX:
-					coupIA->TlgDep = htonl(T_SIX);
-					break;
+			err = send(sockIA, &coupIA->TcolArr, sizeof(int), 0);
+			if (err != sizeof(int)) {
+				perror("(client) erreur sur le send");
+				shutdown(sockIA, SHUT_RDWR); close(sockIA);
+				return -5;
+			}
 
-				default :
-					break;
-		}
+			err = send(sockIA, &coupIA->TlgArr, sizeof(int), 0);
+			if (err != sizeof(int)) {
+				perror("(client) erreur sur le send");
+				shutdown(sockIA, SHUT_RDWR); close(sockIA);
+				return -5;
+			}
 
-		err = send(sockIA, &coupIA->TlgDep, sizeof(int), 0);
-		if (err != sizeof(int)) {
-			perror("(client) erreur sur le send");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -5;
-		}
-
-		err = send(sockIA, &coupIA->TcolDep, sizeof(int), 0);
-		if (err != sizeof(int)) {
-			perror("(client) erreur sur le send");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -5;
+			err = send(sockIA, &coupIA->estCapt, sizeof(int), 0);
+			if (err != sizeof(int)) {
+				perror("(client) erreur sur le send");
+				shutdown(sockIA, SHUT_RDWR); close(sockIA);
+				return -5;
+			}
 		}
 	}
 	return 0;

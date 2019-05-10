@@ -11,9 +11,9 @@
 //Code requete moteur IA
 #define INIT 0
 //Code reponse moteur IA
-#define T_DEPLACER 0
-#define T_DEPOSER 1
-#define T_AUCUN 2
+#define T_DEPLACER 1
+#define T_DEPOSER 2
+#define T_AUCUN 3
 //Type piece
 #define T_KODAMA 0
 #define T_KODAMA_SAMOURAI 1
@@ -42,8 +42,6 @@
 typedef struct TPartieIA {
 	int codeReq;
 	int sens;
-	int numPartie;
-	int tour;
 } TPartieIA;
 
 //Definition de la structure d'une reponse
