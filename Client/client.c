@@ -56,12 +56,14 @@ int main(int argc, char **argv) {
   port = atoi(argv[2]);
   strcpy(nomJoueur, argv[3]);
   
-	// connexion avec le moteur IA
-	sockIA = socketClient(host, PORT);
-
 	// creation d'une socket, domaine AF_INET, protocole TCP
 	sock = socketClient(host, port);
-  numPartie = 1;
+    numPartie = 1;
+
+
+	// connexion avec le moteur IA
+	sockIA = socketClient("127.0.0.1", PORT);
+
 
 	// demande d'une nouvelle partie
 	reqP.idReq = PARTIE;
@@ -72,7 +74,7 @@ int main(int argc, char **argv) {
 		// envoi de la requete partie
 		err = send(sock, &reqP, sizeof(TPartieReq), 0);
 		if (err != sizeof(TPartieReq)) {
-			perror("(client) erreur sur le send");
+			perror("(client) erreur sur le send serveur");
 			shutdown(sock, SHUT_RDWR); close(sock);
 			return -5;
 		}
@@ -80,7 +82,7 @@ int main(int argc, char **argv) {
 		// reception de la reponse partie
 		err = recv(sock, &repP, sizeof(TPartieRep), 0);
 		if (err != sizeof(TPartieRep)) {
-			perror("(client) erreur dans la reception");
+			perror("(client) erreur dans la reception serveur");
 			shutdown(sock, SHUT_RDWR); close(sock);
 			return -6;
 		}
@@ -105,8 +107,9 @@ int main(int argc, char **argv) {
 
 	err = send(sockIA, &partieIA.codeReq, sizeof(int), 0);
 	if (err != sizeof(int)) {
-		perror("(client) erreur sur le send");
+		perror("(client) erreur sur le send java");
 		shutdown(sockIA, SHUT_RDWR); close(sockIA);
+        shutdown(sock, SHUT_RDWR); close(sock);
 		return -5;
 	}
 
@@ -114,6 +117,7 @@ int main(int argc, char **argv) {
 	if (err != sizeof(int)) {
 		perror("(client) erreur sur le send");
 		shutdown(sockIA, SHUT_RDWR); close(sockIA);
+        shutdown(sock, SHUT_RDWR); close(sock);
 		return -5;
 	}
 	
