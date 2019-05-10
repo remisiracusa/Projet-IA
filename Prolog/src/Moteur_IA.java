@@ -25,6 +25,151 @@ public class Moteur_IA {
 	static boolean cont;
 
 	public static void main(String[] args) {
+		TCoup test = jasper2();
+	}
+	
+	public static TCoup jasper2() {
+		TCoup coup = new TCoup();
+		//String saisie = new String("yokai([11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5],top,Sol).");
+		String saisie = new String("yokai2([11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5],top,Piece,Ind,NewInd,CarteCapturee).");
+		//String saisie = new String("yokai2([11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5],top,Sol).");
+		
+		SICStus sp = null;
+
+		try {
+
+			// Creation d'un object SICStus
+			sp = new SICStus();
+
+			// Chargement d'un fichier prolog .pl
+			sp.load("./src/projet_ia/yokai.pl");
+			
+		}
+		// exception déclanchée par SICStus lors de la création de l'objet sp
+		catch (SPException e) {
+			System.err.println("Exception SICStus Prolog : " + e);
+			e.printStackTrace();
+			System.exit(-2);
+		}
+
+		// lecture au clavier d'une requète Prolog
+		//System.out.print("| ?- ");
+		//saisie = saisieClavier();
+
+		// boucle pour saisir les informations
+		//while (! saisie.equals("halt.")) {
+
+			// HashMap utilisé pour stocker les solutions
+			HashMap results = new HashMap();
+			SPTerm piece = new SPTerm(sp);
+			SPTerm ind = new SPTerm(sp);
+			SPTerm newInd = new SPTerm(sp);
+			SPTerm carteCapturee = new SPTerm(sp);
+			try {
+
+				// Creation d'une requete (Query) Sicstus
+				//   - en fonction de la saisie de l'utilisateur
+				//   - instanciera results avec les résultats de la requète
+				Query qu = sp.openQuery(saisie,results);
+
+				// parcours des solutions
+				boolean moreSols = qu.nextSolution();
+
+				// on ne boucle que si la liste des instanciations de variables est non vide
+				boolean continuer = !(results.isEmpty());
+
+				while (moreSols && continuer) {
+					//Voir pour deposer
+					coup.setCodeRep(CodeRep.DEPLACER);
+					// chaque solution est sockée dans un HashMap
+					// sous la forme : VariableProlog -> Valeur
+					//System.out.println(results + " ? ");
+					piece = (SPTerm) results.get("Piece");
+					ind = (SPTerm) results.get("Ind");
+					newInd = (SPTerm) results.get("NewInd");
+					carteCapturee = (SPTerm) results.get("CarteCapturee");
+					
+					switch((int) piece.getInteger()){
+						case 1 :
+							coup.setPieceType(Type.KODAMA);
+							break;
+						case 2 :
+							coup.setPieceType(Type.KODAMA_SAMOURAI);
+							break;
+						case 3 :
+							coup.setPieceType(Type.KIRIN);
+							break;
+						case 4 :
+							coup.setPieceType(Type.KOROPOKKURU);
+							break;
+						case 5 :
+							coup.setPieceType(Type.ONI);
+							break;
+						case 6 :
+							coup.setPieceType(Type.SUPER_ONI);
+							break;
+						case 7 :
+							coup.setPieceType(Type.KODAMA);
+							break;
+						case 8 :
+							coup.setPieceType(Type.KODAMA_SAMOURAI);
+							break;
+						case 9 :
+							coup.setPieceType(Type.KIRIN);
+							break;
+						case 10 :
+							coup.setPieceType(Type.KOROPOKKURU);
+							break;
+						case 11 :
+							coup.setPieceType(Type.ONI);
+							break;
+						case 12 :
+							coup.setPieceType(Type.SUPER_ONI);
+							break;
+						default:
+							break;
+					}
+					
+					if(((int) carteCapturee.getInteger()) == 0) {
+						coup.setEstCapt(false);
+					}else {
+						coup.setEstCapt(true);
+					}
+					
+					// demande à l'utilisateur de continuer ...
+					//saisie = saisieClavier();
+					if (saisie.equals(";")) {
+						// solution suivante --> results contient la nouvelle solution
+						moreSols = qu.nextSolution();
+					}
+					else {
+						continuer = false;
+					}
+				}
+
+				// fermeture de la requète
+				System.err.println("Fermeture requete");
+				qu.close();
+
+			}
+			catch (SPException e) {
+				System.err.println("Exception prolog\n" + e);
+			}
+			// autres exceptions levées par l'utilisation du Query.nextSolution()
+			catch (Exception e) {
+				System.err.println("Other exception : " + e);
+			}
+
+			//System.out.print("| ?- ");
+			// lecture au clavier
+			//saisie = saisieClavier();        
+		//}
+		System.out.println("End of jSicstus");
+		System.out.println("Bye bye");
+		return coup;
+	}
+	
+	public static void IA() {
 		ServerSocket srv; //Socket de connexion
 		Socket sockComm; // Socket de communication
 		TPartie TPartie = new TPartie();
@@ -391,11 +536,13 @@ public class Moteur_IA {
 			srv.close();
 			System.out.println("Arrêt du serveur");
 		}catch(IOException e){
-			e.printStackTrace();}
+			e.printStackTrace();
+		}
+			
 	}
 
 	public static void jasper() {
-		/*
+		
 		String saisie = new String("");
 
 		SICStus sp = null;
@@ -487,9 +634,9 @@ public class Moteur_IA {
 			saisie = saisieClavier();        
 		}
 		System.out.println("End of jSicstus");
-		System.out.println("Bye bye");*/
+		System.out.println("Bye bye");
 	}
-
+	
 	public static String saisieClavier() {
 
 		// declaration du buffer clavier

@@ -1,4 +1,4 @@
-/* -*- Mode:Prolog; coding:iso-8859-1; indent-tabs-mode:nil; prolog-indent-width:8; prolog-paren-indent:3; tab-width:8; -*- */
+/* -*- Mode:Prolog; coding:iso-8859-1; indent-tabs-mode:nil; prolog-indent-width:8; prolog-paren-indent:4; tab-width:8; -*- */
 
 :-set_prolog_flag(toplevel_print_options,[max_depth(0)]).
 :-use_module(library(plunit)).
@@ -21,7 +21,7 @@
 % 10 = Koropokkuru => N, NE, E, SE, S, SO, O, NO
 % 11 = Oni => NE, SE, S, SO, NO
 % 12 = Super Oni => N, E, SE, S, SO, O
-
+test(l).
 initialisationGrille([11,9,10,9,11,
                        0,0,0 ,0,0,
                        0,7,7 ,7,0,
@@ -150,6 +150,26 @@ profondeur(_,_,Acc1,Acc1).
 yokai(Grille,Joueur,Sol):-
         profondeur(Grille,Joueur,[],LSol),
         reverse(LSol,Sol).
+
+
+deplacement2(Joueur, Grille, NumC, Ind, NewInd, CarteCapturee):-
+        cartesJoueur(Joueur, LCartes),
+        memberDif(NumC, LCartes, _),
+        directionPossible(NumC, Ind, NewInd, Grille),      % Retourne Ind & Dir
+        deplacementCarteValide(Joueur, NewInd, Grille),
+        deplacerCarte(Ind, NewInd, Grille, _, CarteCapturee).
+        
+
+
+profondeur2(Grille,Joueur,LSol,Acc1):-
+        deplacement2(Joueur, Grille, Piece, Ind, NewInd, CarteCapturee),
+        \+member([Piece,Ind,NewInd,CarteCapturee],LSol),
+        profondeur2(Grille,Joueur,[[Piece,Ind,NewInd,CarteCapturee]|LSol],Acc1),
+        !.
+profondeur2(_,_,Acc1,Acc1).
+        
+yokai2(Grille,Joueur, Piece, Ind, NewInd, CarteCapturee):-
+        profondeur2(Grille,Joueur,[],[[Piece, Ind, NewInd, CarteCapturee]|_]).
 
 /* Pour tester
 deplacement(top, [11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5], NewGrille, CarteCapturee).
