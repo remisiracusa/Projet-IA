@@ -75,7 +75,9 @@ public class Moteur_IA {
 						}else {
 							sens = "top";
 						}
-						String requete = "yokai2("+grille.getGrilleProlog()+","+sens+",Piece,Ind,NewInd,CarteCapturee)."; 
+						String requete = "yokaiRandom("+grille.getGrilleProlog()+","+sens+",Piece,Ind,NewInd,CarteCapturee)."; 
+						
+						//String requete = "yokai2("+grille.getGrilleProlog()+","+sens+",Piece,Ind,NewInd,CarteCapturee)."; 
 						//System.out.println(requete);
 						TCoup coup = coupProlog(requete, sp);
 						//Envoie coup
@@ -219,6 +221,8 @@ public class Moteur_IA {
 
 								if(coup.isEstCapt()) {
 									dos.writeInt(1);
+									switch(coup.get)
+									TPartie.capture(coup.get);
 								}else {
 									dos.writeInt(0);
 								}
@@ -516,12 +520,8 @@ public class Moteur_IA {
 					break;
 				}
 
-				if(((int) carteCapturee.getInteger()) == 0) {
-					coup.setEstCapt(false);
-				}else {
-					coup.setEstCapt(true);
-				}
-
+				coup.setEstCapt((int) carteCapturee.getInteger());
+				
 				// demande à l'utilisateur de continuer ...
 				//saisie = saisieClavier();
 				if (saisie.equals(";")) {

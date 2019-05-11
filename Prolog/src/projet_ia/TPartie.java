@@ -1,8 +1,19 @@
 package projet_ia;
 
+import java.util.HashMap;
+
 public class TPartie {
 	private CodeReq codeReq;
 	private Sens sens;
+	private HashMap<String,Integer> capture;
+	
+	public TPartie() {
+		capture = new HashMap<String, Integer>();
+		capture.put("KODAMA", 0);
+		capture.put("KIRIN", 0);
+		capture.put("KOROPOKKURU", 0);
+		capture.put("ONI", 0);
+	}
 	
 	public enum Sens {
 		  NORD,
@@ -24,5 +35,13 @@ public class TPartie {
 	}
 	public void setSens(Sens sens) {
 		this.sens = sens;
+	}
+	
+	public void capture(String piece) {
+		capture.replace(piece, (capture.get(piece)+1));
+	}
+	
+	public void relacher(String piece) {
+		capture.replace(piece, (capture.get(piece)-1));
 	}
 }

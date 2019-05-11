@@ -4,6 +4,7 @@
 :-use_module(library(plunit)).
 :-use_module(library(lists)).
 :-use_module(library(clpfd)).
+:-use_module(library(random)).
 % Déplacements : N, NE, E, SE, S, SO, O, NO
 
 % Pions sud
@@ -171,8 +172,15 @@ profondeur2(_,_,Acc1,Acc1).
 yokai2(Grille,Joueur, Piece, Ind, NewInd, CarteCapturee):-
         profondeur2(Grille,Joueur,[],[[Piece, Ind, NewInd, CarteCapturee]|_]).
 
+yokaiRandom(Grille,Joueur, Piece, Ind, NewInd, CarteCapturee):-
+        profondeur2(Grille,Joueur,[],LSol),
+        length(LSol, Length),
+        random(1, Length, Index),
+        nth1(Index, LSol, [Piece, Ind, NewInd, CarteCapturee]).
+
 /* Pour tester
 deplacement(top, [11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5], NewGrille, CarteCapturee).
 yokai([11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5],top,Sol).
-yokai2([11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5],top,Piece,Ind,NewInd,CarteCapturee).
+yokai2([11,9,10,9,11,0,0,0 ,0,0,0,7,7 ,7,0,0,1,1 ,1,0,0,0,0 ,0,0,5,3,4 ,3,5],top,Piece,Ind,NewInd,CarteCapturee).
+yokaiRandom([11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4 ,3,5],top, Piece, Ind, NewInd, CarteCapturee).
 */
