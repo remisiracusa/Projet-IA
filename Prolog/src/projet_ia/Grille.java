@@ -14,36 +14,7 @@ public class Grille {
 	public Grille() {
 		super();
 		this.grille = new ArrayList<Integer>();
-		grille.add(11);
-		grille.add(9);
-		grille.add(10);
-		grille.add(9);
-		grille.add(11);
-		grille.add(0);
-		grille.add(0);
-		grille.add(0);
-		grille.add(0);
-		grille.add(0);
-		grille.add(0);
-		grille.add(7);
-		grille.add(7);
-		grille.add(7);
-		grille.add(0);
-		grille.add(0);
-		grille.add(1);
-		grille.add(1);
-		grille.add(1);
-		grille.add(0);
-		grille.add(0);
-		grille.add(0);
-		grille.add(0);
-		grille.add(0);
-		grille.add(0);
-		grille.add(5);
-		grille.add(3);
-		grille.add(4);
-		grille.add(3);
-		grille.add(5);
+		initialisationGrille();
 	}
 	
 	public List<Integer> getGrille() {
@@ -116,5 +87,39 @@ public class Grille {
 		}
 
 		return sp;
+	}
+	
+	public void initialisationGrille() {
+		this.grille.clear();
+		grille.add(11);
+		grille.add(9);
+		grille.add(10);
+		grille.add(9);
+		grille.add(11);
+		grille.add(0);
+		grille.add(0);
+		grille.add(0);
+		grille.add(0);
+		grille.add(0);
+		grille.add(0);
+		grille.add(7);
+		grille.add(7);
+		grille.add(7);
+		grille.add(0);
+		grille.add(0);
+		grille.add(1);
+		grille.add(1);
+		grille.add(1);
+		grille.add(0);
+		grille.add(0);
+		grille.add(0);
+		grille.add(0);
+		grille.add(0);
+		grille.add(0);
+		grille.add(5);
+		grille.add(3);
+		grille.add(4);
+		grille.add(3);
+		grille.add(5);
 	}
 }

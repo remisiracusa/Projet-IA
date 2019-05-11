@@ -64,6 +64,7 @@ public class Moteur_IA {
 					tour = false;
 				}
 				//Mise à zero de la grille
+				grille.initialisationGrille();
 				while(cont) {
 					if(tour) {
 
@@ -75,7 +76,7 @@ public class Moteur_IA {
 							sens = "top";
 						}
 						String requete = "yokai2("+grille.getGrilleProlog()+","+sens+",Piece,Ind,NewInd,CarteCapturee)."; 
-						System.out.println(requete);
+						//System.out.println(requete);
 						TCoup coup = coupProlog(requete, sp);
 						//Envoie coup
 						switch(coup.getCodeRep()) {
@@ -226,9 +227,12 @@ public class Moteur_IA {
 							}else {
 								//Deposer sur grille
 							}
-						}					
+							System.out.println("Coup envoye : "+coup.getCodeRep()+" "+coup.getPieceSens()+" "+coup.getPieceType()+" "+coup.getTlgDep()+" "+coup.getTcolDep()+" "+" "+coup.getTlgArr()+" "+coup.getTcolArr()+" "+coup.isEstCapt());							
+						}else {
+							System.out.println("Coup envoye : "+coup.getCodeRep());
+						}
 						tour = false;
-						System.out.println("Coup envoye : "+coup.getCodeRep()+" "+coup.getPieceSens()+" "+coup.getPieceType()+" "+coup.getTlgDep()+" "+coup.getTcolDep()+" "+" "+coup.getTlgArr()+" "+coup.getTcolArr()+" "+coup.isEstCapt());
+						
 					}else {	
 						TCoup coup = new TCoup();
 						System.out.println("Reception coup adverse");

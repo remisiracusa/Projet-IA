@@ -135,6 +135,7 @@ int main(int argc, char **argv) {
       // gestion de la partie en cours
       while (cont) {
           if (tour) {
+              printf("sensP : %u", sensP);
               // mon tour de jeu
               printf("Mon tour\n");
               err = jouerPiece(&coupIA, sock, sockIA, numPartie, sensP);
@@ -155,6 +156,7 @@ int main(int argc, char **argv) {
               }
               tour = 0;
           }else{
+              printf("sensP : %u", sensP);
               // tour de jeu adverse
               printf("Tour adverse\n");
               printf("Attente validation\n");
@@ -515,7 +517,7 @@ int jouerPiece(TCoupIA* coupIA, int sock, int sockIA, int numPartie, TSensTetePi
 	}
     reqC.numPartie = numPartie;
 
-    printf("Coup recu de l'IA\n");
+    printf("Coup recu de l'IA : %u\n", reqC.idRequest);
 
     // envoi de la requete coup au serveur
 	err = send(sock, &reqC, sizeof(TCoupReq), 0);
@@ -786,60 +788,94 @@ int validationCoup(char joueur, int sock){
 		return -6;
 	}
 
-	if(repC.err != ERR_OK){
-		cont = 0;
-		printf("validCoup : %u\n", repC.validCoup);
-		switch (repC.validCoup) {
-				case VALID :
-						break;
-				        printf("VAL²ID\n");
+	switch(repC.err){
+        case ERR_OK :
+            printf("Erreur ERR_OK\n");
+            break;
 
-				case TIMEOUT :
-						printf("Erreur TIMEOUT\n");
-						break;
+        case ERR_COUP :
+            cont = 0;
+            printf("Erreur COUP\n");
+            break;
 
-				case TRICHE :
-						printf("Erreur TRICHE\n");
-						break;
+        case ERR_TYP :
+            cont = 0;
+            printf("Erreur TYPE\n");
+            break;
 
-				default :
-					break;
-		}
-		if (joueur == 'M') {		
-			switch (repC.propCoup) {
-				case GAGNE :
-						printf("Gagne\n");
-						break;
+        case ERR_PARTIE :
+            cont = 0;
+            printf("Erreur PARTIE\n");
+            break;
 
-				case NUL :
-						printf("Perdu match null\n");
-						break;
-
-				case PERDU :
-						printf("Perdu\n");
-						break;
-
-				default :
-					break;
-			}
-		}else{
-			switch (repC.propCoup) {
-				case GAGNE :
-						printf("Perdu\n");
-						break;
-
-				case NUL :
-						printf("Perdu match null\n");
-						break;
-
-				case PERDU :
-						printf("Gagne\n");
-						break;
-
-				default :
-					break;
-			}
-		}
+        default :
+            break;
 	}
+
+	switch (repC.validCoup) {
+            case VALID :
+                break;
+                printf("VAL²ID\n");
+
+            case TIMEOUT :
+                cont = 0;
+                printf("Erreur TIMEOUT\n");
+                break;
+
+            case TRICHE :
+                cont = 0;
+                printf("Erreur TRICHE\n");
+                break;
+
+            default :
+                break;
+        }
+        if (joueur == 'M') {
+            switch (repC.propCoup) {
+                case CONT :
+                    break;
+
+                case GAGNE :
+                    cont = 0;
+                    printf("Gagne\n");
+                    break;
+
+                case NUL :
+                    cont = 0;
+                    printf("Perdu match null\n");
+                    break;
+
+                case PERDU :
+                    cont = 0;
+                    printf("Perdu\n");
+                    break;
+
+                default :
+                    break;
+            }
+        }else{
+            switch (repC.propCoup) {
+                case CONT :
+                    break;
+
+                case GAGNE :
+                    cont = 0;
+                    printf("Perdu\n");
+                    break;
+
+                case NUL :
+                    cont = 0;
+                    printf("Perdu match null\n");
+                    break;
+
+                case PERDU :
+                    cont = 0;
+                    printf("Gagne\n");
+                    break;
+
+                default :
+                    break;
+            }
+        }
 	return cont;
 }
