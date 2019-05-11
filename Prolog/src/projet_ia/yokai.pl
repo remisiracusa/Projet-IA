@@ -22,13 +22,13 @@
 % 10 = Koropokkuru => N, NE, E, SE, S, SO, O, NO
 % 11 = Oni => NE, SE, S, SO, NO
 % 12 = Super Oni => N, E, SE, S, SO, O
-test(l).
+
 initialisationGrille([11,9,10,9,11,
-                       0,0,0 ,0,0,
-                       0,7,7 ,7,0,
-                       0,1,1 ,1,0,
-                       0,0,0 ,0,0,
-                       5,3,4 ,3,5]).
+                      0,0,0 ,0,0,
+                      0,7,7 ,7,0,
+                      0,1,1 ,1,0,
+                      0,0,0 ,0,0,
+                      5,3,4 ,3,5]).
 
 memberDif(X,[X|LVal],LVal).
 memberDif(X,[Y|LVal],[Y|NLVal]):-
@@ -71,16 +71,16 @@ directionToInd(Ind,'NO',NewInd):-NewInd is Ind-6.
 
 /*
 deplacementCarteValide(_, NewInd, Grille):-
-        indiceCarte(NumC, NewInd, Grille),
-        NumC == 0.
+indiceCarte(NumC, NewInd, Grille),
+NumC == 0.
 */
 
 deplacementCarteValide(Joueur, NewInd, Grille):-
         indiceCarte(NumC, NewInd, Grille),
         cartesJoueur(Joueur, LCartes),
         \+member(NumC, LCartes).
-        
-        
+
+
 joueurAdverse(top, bottom).
 joueurAdverse(bottom,top).
 
@@ -99,7 +99,7 @@ editValeur(1, NewVal, [_|Grille], [NewVal|Grille]).
 editValeur(Ind, NewVal, [E|Grille], [E|NewGrille]):-
         NewInd is Ind-1,
         editValeur(NewInd, NewVal, Grille, NewGrille).
-        
+
 
 deplacement(Joueur, Grille, NewGrille, CarteCapturee):-
         cartesJoueur(Joueur, LCartes),
@@ -107,7 +107,7 @@ deplacement(Joueur, Grille, NewGrille, CarteCapturee):-
         directionPossible(NumC, Ind, NewInd, Grille),      % Retourne Ind & Dir
         deplacementCarteValide(Joueur, NewInd, Grille),
         deplacerCarte(Ind, NewInd, Grille, NewGrille, CarteCapturee).
-        
+
 
 directionGrilleValide(Ind, 'N'):- Ind > 5.
 
@@ -147,7 +147,7 @@ profondeur(Grille,Joueur,LSol,Acc1):-
         profondeur(Grille,Joueur,[[NewGrille|CarteCapturee]|LSol],Acc1),
         !.
 profondeur(_,_,Acc1,Acc1).
-        
+
 yokai(Grille,Joueur,Sol):-
         profondeur(Grille,Joueur,[],LSol),
         reverse(LSol,Sol).
@@ -165,95 +165,110 @@ koropokkuru(top, 10).
 koropokkuru(bottom, 4).
 
 test22(Joueur, Score):-
-		initialisationGrille(Grille),
-		heuristiqueJ(Joueur, Grille, Score).
+        initialisationGrille(Grille),
+        heuristiqueJ(Joueur, Grille, Score).
 
 
 directionsRoiPossible(Joueur, Grille, Dirs, AllDirs):-
-		koropokkuru(Joueur, NumR),
-		directionPossible(NumR, Ind, NewInd, Grille),
-		deplacementCarteValide(Joueur, NewInd, Grille),
-		\+member(NewInd, Dirs),
-		directionsRoiPossible(Joueur, Grille, [NewInd|Dirs], AllDirs).
+        koropokkuru(Joueur, NumR),
+        directionPossible(NumR, _, NewInd, Grille),
+        deplacementCarteValide(Joueur, NewInd, Grille),
+        \+member(NewInd, Dirs),
+        directionsRoiPossible(Joueur, Grille, [NewInd|Dirs], AllDirs).
 
 directionsRoiPossible(_, _, AllDirs, AllDirs).
 
 scoreRoi(NbDirRoiPossible, Score):-
-		NbDirRoiPossible == 0,
-		Score is 100.
+        NbDirRoiPossible == 0,
+        Score is 100.
 
 scoreRoi(NbDirRoiPossible, Score):-
-		NbDirRoiPossible =\= 0,
-		Score is NbDirRoiPossible * 10.
+        NbDirRoiPossible =\= 0,
+        Score is NbDirRoiPossible * 10.
 
-heuristiqueJ(Joueur, Grille, ScoreRJ):-
-		directionsRoiPossible(Joueur, Grille, [], Dirs),
-		length(Dirs, NbDirRoiPossible),
-		!,
-		scoreRoi(NbDirRoiPossible, ScoreRJ),
-		ScoreJ is -ScoreRJ,
+heuristiqueJ(Joueur, Grille, Score):-
+        directionsRoiPossible(Joueur, Grille, [], Dirs),
+        length(Dirs, NbDirRoiPossible),
+        !,
+        scoreRoi(NbDirRoiPossible, ScoreJ),
 
-		joueurAdverse(Joueur, Adversaire),
-		directionsRoiPossible(Adversaire, Grille, [], DirsA),
-		length(DirsA, NbDirRoiAPossible),
-		!,
-		scoreRoi(NbDirRoiAPossible, ScoreA),
-
-		Score is ScoreJ*2 + ScoreA.
+        joueurAdverse(Joueur, Adversaire),
+        directionsRoiPossible(Adversaire, Grille, [], DirsA),
+        length(DirsA, NbDirRoiAPossible),
+        !,
+        scoreRoi(NbDirRoiAPossible, ScoreA),
+        
+        Score is ScoreJ*2 - ScoreA.
 
 heuristiqueAdv(JoueurAdv, Grille, Score):-
-		directionsRoiPossible(JoueurAdv, Grille, [], DirsA),
-		length(DirsA, NbDirRoiAPossible),
-		!,
-		scoreRoi(NbDirRoiAPossible, ScoreRA),
-		ScoreA is -ScoreRA,
+        directionsRoiPossible(JoueurAdv, Grille, [], DirsA),
+        length(DirsA, NbDirRoiAPossible),
+        !,
+        scoreRoi(NbDirRoiAPossible, ScoreRA),
+        ScoreA is -ScoreRA,
 
-		joueurAdverse(JoueurAdv, Joueur),
-		directionsRoiPossible(Joueur, Grille, [], DirsJ),
-		length(DirsJ, NbDirRoiJPossible),
-		!,
-		scoreRoi(NbDirRoiJPossible, ScoreJ),
+        joueurAdverse(JoueurAdv, Joueur),
+        directionsRoiPossible(Joueur, Grille, [], DirsJ),
+        length(DirsJ, NbDirRoiJPossible),
+        !,
+        scoreRoi(NbDirRoiJPossible, ScoreJ),
 
-		Score is ScoreA*2 + ScoreJ.
+        Score is ScoreA*2 + ScoreJ.
 
-minmax(_, _, AllCoupEstimes, 4, MeilleurCoup) :-
-
-
-
-
-minmax(Joueur, Grille, ChoixProfondeur, CoupEstimes, NbProfondeur, MeilleurCoup):-
-		NewCoupEstimes = [[NewGrille,Piece,Ind,NewInd,CarteCapturee,Score]|CoupEstimes],
-		cartesJoueur(Joueur, LCartes),
-
-		/*profondeur3(Grille,Joueur,[], LSol),
-        		length(LSol, Length),
-        		random(1, Length, Index),
-        		nth1(Index, LSol, [NewGrille,Piece,Ind,NewInd,CarteCapturee]),*/
-
-		heuristiqueJ(Joueur, NewGrille, Score),
-
-		NbProfondeur2 is NbProfondeur+1,
-		minmaxAdv(Joueur, GrilleModif, NewCoupEstimes, NbProfondeur2, MeilleurCoup).
-
-
+/*
 minmaxAdv(Joueur, Grille, CoupEstimes, CoupEstimesAdv, NbProfondeur):-
-		joueurAdverse(Joueur, Advers),
-		cartesJoueur(Advers, LCartes),
+        joueurAdverse(Joueur, Advers),
+        cartesJoueur(Advers, LCartes),
 
-		profondeur3(Grille,Advers,[],LSol),
-		length(LSol, Length),
-		random(1, Length, Index),
-		nth1(Index, LSol, [NewGrille,Piece,Ind,NewInd,CarteCapturee]),
+        profondeur3(Grille,Advers,[],LSol),
+        length(LSol, Length),
+        random(1, Length, Index),
+        nth1(Index, LSol, [NewGrille,Piece,Ind,NewInd,CarteCapturee]),
 
         heuristiqueAdv(Advers, NewGrille, Score),
 
-		NbProfondeur2 is NbProfondeur+1,
-		minmax(Joueur, GrilleModif, CoupEstimes, CoupEstimesAdv, NbProfondeur2).
+        NbProfondeur2 is NbProfondeur+1,
+        minmax(Joueur, GrilleModif, CoupEstimes, CoupEstimesAdv, NbProfondeur2).
+*/
 
-launchMinMax(Grille, Joueur, LSol, Acc1):-
-		profondeur3(Grille,Joueur,[], LSol),
-		minmax(Joueur, Grille, LSol, _, 1, MeilleurCoup).
+coup(Joueur,[NewGrille,Piece,Ind,NewInd,CarteCapturee,Score],LSolPossible, LSolRestante):-
+        length(LSolPossible, Length),
+        random(1, Length, Index),
+        nth1(Index, LSolPossible, [NewGrille,Piece,Ind,NewInd,CarteCapturee]),
+        memberDif([NewGrille,Piece,Ind,NewInd,CarteCapturee], LSolPossible, LSolRestante),
+        heuristiqueJ(Joueur, NewGrille, Score).
 
+niveauUn(_, _, LSol, _, 0, LSol):-
+        !.
+
+niveauUn(Grille, Joueur, LSol, LSolRestante, NbCoup, Acc):-
+        NbC is NbCoup-1,
+        coup(Joueur,LSolCoup,LSolRestante, LSolRes),
+        niveauUn(Grille, Joueur, [LSolCoup|LSol], LSolRes, NbC, Acc),
+        !.
+
+
+
+minmax(Grille, Joueur, LSol, NbProfondeur):-
+        profondeur3(Grille,Joueur,[], LSolPossible),
+        niveauUn(Grille,Joueur,[],LSolPossible,NbProfondeur,LSol).
+
+calculMeilleurCoup([[_, _, _, _, _, Score]|LSol],[Grille2, Piece2, Ind2, NewInd2, CarteCapturee2, Score2],Acc):-
+        Score2 > Score,
+        calculMeilleurCoup(LSol,[Grille2, Piece2, Ind2, NewInd2, CarteCapturee2, Score2],Acc),
+        !.
+
+calculMeilleurCoup([[Grille, Piece, Ind, NewInd, CarteCapturee, _]|LSol],[_, _, _, _, _, Score2],Acc):-
+        calculMeilleurCoup(LSol,[Grille, Piece, Ind, NewInd, CarteCapturee, Score2],Acc),
+        !.
+
+calculMeilleurCoup([],Acc,Acc).
+
+
+
+launchMinMax(Grille, Joueur, Piece, Ind, NewInd, CarteCapturee):-
+        minmax(Grille, Joueur, [[Grille2, Piece2, Ind2, NewInd2, CarteCapturee2, Score2]|LSol], 10),
+        calculMeilleurCoup(LSol,[Grille2, Piece2, Ind2, NewInd2, CarteCapturee2, Score2],[_, Piece, Ind, NewInd, CarteCapturee,_]).
 
 
 deplacement3(Joueur, Grille, NumC, Ind, NewInd, NewGrille, CarteCapturee):-
@@ -265,7 +280,7 @@ deplacement3(Joueur, Grille, NumC, Ind, NewInd, NewGrille, CarteCapturee):-
 
 profondeur3(Grille,Joueur,LSol,Acc1):-
         deplacement3(Joueur, Grille, Piece, Ind, NewInd, NewGrille, CarteCapturee),
-        \+member([Piece,Ind,NewInd,CarteCapturee],LSol),
+        \+member([NewGrille,Piece,Ind,NewInd,CarteCapturee],LSol),
         profondeur3(Grille,Joueur,[[NewGrille,Piece,Ind,NewInd,CarteCapturee]|LSol],Acc1),
         !.
 profondeur3(_,_,Acc1,Acc1).
@@ -276,7 +291,7 @@ profondeur2(Grille,Joueur,LSol,Acc1):-
         profondeur2(Grille,Joueur,[[Piece,Ind,NewInd,CarteCapturee]|LSol],Acc1),
         !.
 profondeur2(_,_,Acc1,Acc1).
-        
+
 yokai2(Grille,Joueur, Piece, Ind, NewInd, CarteCapturee):-
         profondeur2(Grille,Joueur,[],[[Piece, Ind, NewInd, CarteCapturee]|_]).
 
