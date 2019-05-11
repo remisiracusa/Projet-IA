@@ -38,10 +38,12 @@ public class TPartie {
 	}
 	
 	public void capture(String piece) {
+		System.out.println(piece + " capture !");
 		capture.replace(piece, (capture.get(piece)+1));
 	}
 	
 	public void relacher(String piece) {
+		System.out.println(piece + " relache !");
 		capture.replace(piece, (capture.get(piece)-1));
 	}
 }

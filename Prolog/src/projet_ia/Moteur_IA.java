@@ -76,10 +76,9 @@ public class Moteur_IA {
 							sens = "top";
 						}
 						String requete = "yokaiRandom("+grille.getGrilleProlog()+","+sens+",Piece,Ind,NewInd,CarteCapturee)."; 
-						
 						//String requete = "yokai2("+grille.getGrilleProlog()+","+sens+",Piece,Ind,NewInd,CarteCapturee)."; 
 						//System.out.println(requete);
-						TCoup coup = coupProlog(requete, sp);
+						TCoup coup = coupProlog(requete, sp, TPartie);
 						//Envoie coup
 						switch(coup.getCodeRep()) {
 						case DEPLACER :
@@ -221,17 +220,18 @@ public class Moteur_IA {
 
 								if(coup.isEstCapt()) {
 									dos.writeInt(1);
-									switch(coup.get)
-									TPartie.capture(coup.get);
 								}else {
 									dos.writeInt(0);
 								}
 								//Deplacer sur grille
+								System.out.println(grille.toString());
 								grille.miseAJourDeplacer(coup);
 							}else {
+								grille.miseAJourDeposer(coup);
 								//Deposer sur grille
 							}
 							System.out.println("Coup envoye : "+coup.getCodeRep()+" "+coup.getPieceSens()+" "+coup.getPieceType()+" "+coup.getTlgDep()+" "+coup.getTcolDep()+" "+" "+coup.getTlgArr()+" "+coup.getTcolArr()+" "+coup.isEstCapt());							
+							
 						}else {
 							System.out.println("Coup envoye : "+coup.getCodeRep());
 						}
@@ -407,6 +407,7 @@ public class Moteur_IA {
 									grille.miseAJourDeplacer(coup);
 								}else if(coup.getCodeRep() == CodeRep.DEPOSER) {
 									//Deposer sur grille
+									grille.miseAJourDeposer(coup);
 									//grille.miseAJourDeposer(TCoup);
 								}
 								
@@ -430,7 +431,7 @@ public class Moteur_IA {
 
 	}
 	
-	public static TCoup coupProlog(String requete, SICStus sp) {
+	public static TCoup coupProlog(String requete, SICStus sp, TPartie TPartie) {
 		TCoup coup = new TCoup();
 		String saisie = new String(requete);
 
@@ -465,6 +466,7 @@ public class Moteur_IA {
 				//Voir pour deposer
 				System.out.println("coup prolog deplacer");
 				coup.setCodeRep(CodeRep.DEPLACER);
+				coup.setPieceSens(TPartie.getSens());
 				// chaque solution est sockée dans un HashMap
 				// sous la forme : VariableProlog -> Valeur
 				//System.out.println(results + " ? ");
@@ -520,8 +522,54 @@ public class Moteur_IA {
 					break;
 				}
 
-				coup.setEstCapt((int) carteCapturee.getInteger());
-				
+				if(((int) carteCapturee.getInteger()) == 0) {
+					coup.setEstCapt(false);
+				}else {
+					String p = "";
+					switch((int) carteCapturee.getInteger()) {
+					case 1 :
+						p = "KODAMA";
+						break;
+					case 2 :
+						p = "KODAMA";
+						break;
+					case 3 :
+						p = "KIRIN";
+						break;
+					case 4 :
+						p = "KOROPOKKURU";
+						break;
+					case 5 :
+						p = "ONI";
+						break;
+					case 6 :
+						p = "ONI";
+						break;
+					case 7 :
+						p = "KODAMA";
+						break;
+					case 8 :
+						p = "KODAMA";
+						break;
+					case 9 :
+						p = "KIRIN";
+						break;
+					case 10 :
+						p = "KOROPOKKURU";
+						break;
+					case 11 :
+						p = "ONI";
+						break;
+					case 12 :
+						p = "ONI";
+						break;
+					default:
+						break;
+					}
+					TPartie.capture(p);
+					coup.setEstCapt(true);
+				}
+
 				// demande à l'utilisateur de continuer ...
 				//saisie = saisieClavier();
 				if (saisie.equals(";")) {

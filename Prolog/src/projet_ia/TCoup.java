@@ -13,7 +13,7 @@ public class TCoup {
 	private Colonne TcolDep;    //si deplacement colonne depart
 	private Ligne TlgArr;        //si deplacement ligne arrivee
 	private Colonne TcolArr;    //si deplacement colonne arrivee
-	private int estCapt;    //si piece capturee 1 sinon 0
+	private boolean estCapt;    //si piece capturee 1 sinon 0
 
 	enum CodeRep {
 		DEPLACER,
@@ -167,11 +167,11 @@ public class TCoup {
 		TcolArr = tcolArr;
 	}
 
-	public int getEstCapt() {
+	public boolean isEstCapt() {
 		return estCapt;
 	}
 
-	public void setEstCapt(int estCapt) {
+	public void setEstCapt(boolean estCapt) {
 		this.estCapt = estCapt;
 	}
 }
