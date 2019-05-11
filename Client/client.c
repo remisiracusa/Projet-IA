@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
       cont;	    				// fin de partie
   char* host;					// nom de la machine
   char nomJoueur[T_NOM];		// nom du joueur
-  TSensTetePiece sensP = NORD;   // Sens des pieces
+  TSensTetePiece sensP = SUD;   // Sens des pieces
   TPartieReq reqP;		 		// requete partie
   TPartieRep repP;				// reponse partie
   TCoupReq reqC;		 		// requete coup
@@ -127,9 +127,9 @@ int main(int argc, char **argv) {
   while (numPartie < 3) {
       cont = 1;
       if ((numPartie == 1 && sensP == SUD) || (numPartie == 2 && sensP == NORD)) {
-          tour = 0;
-      }else{
           tour = 1;
+      }else{
+          tour = 0;
       }
 
       // gestion de la partie en cours
@@ -527,7 +527,7 @@ int jouerPiece(TCoupIA* coupIA, int sock, int sockIA, int numPartie, TSensTetePi
 		shutdown(sock, SHUT_RDWR); close(sock);
 		return -5;
 	}
-
+    printf("Coup envoye au serveur\n");
     // rendre socket avec le serveur bloquante
     err = ioctl(sock,FIONBIO,&off);
     if(err!=0){
@@ -547,7 +547,7 @@ int coupAdverse(TCoupIA* coupIA, int sock, int sockIA){
 		shutdown(sock, SHUT_RDWR); close(sock);
 		return -6;
 	}
-
+    printf("Coup recu du serveur\n");
 	// transmission coup adverse a l'IA
 	switch (reqC.typeCoup) {
 		case DEPLACER :
@@ -691,7 +691,7 @@ int coupAdverse(TCoupIA* coupIA, int sock, int sockIA){
 			return -5;
 		}
 
-		if (coupIA->codeRep == T_DEPLACER) {
+		if (reqC.typeCoup == DEPLACER) {
 			switch (reqC.params.deplPiece.caseArr.c) {
 					case A:
 						coupIA->TcolArr = htonl(T_A);
@@ -772,6 +772,7 @@ int coupAdverse(TCoupIA* coupIA, int sock, int sockIA){
 				shutdown(sockIA, SHUT_RDWR); close(sockIA);
 				return -5;
 			}
+			printf("coup envoye a l'IA\n");
 		}
 	}
 	return 0;
