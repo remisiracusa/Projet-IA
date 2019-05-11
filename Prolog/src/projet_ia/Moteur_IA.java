@@ -29,7 +29,6 @@ public class Moteur_IA {
 		ServerSocket srv; //Socket de connexion
 		Socket sockComm; // Socket de communication
 		TPartie TPartie = new TPartie();
-		TCoup TCoup = new TCoup();
 		Grille grille = new Grille();
 		numPartie = 1;
 		cont = true;
@@ -56,9 +55,11 @@ public class Moteur_IA {
 
 			while(numPartie < 3) {
 				if((numPartie == 1 && TPartie.getSens() == Sens.SUD) || (numPartie == 2 && TPartie.getSens() == Sens.NORD)) {
-					tour = false;
-				}else {
+					System.out.println("je commence");
 					tour = true;
+				}else {
+					System.out.println("je commence pas");
+					tour = false;
 				}
 				//Mise à zero de la grille
 				while(cont) {
@@ -66,14 +67,13 @@ public class Moteur_IA {
 
 						//Trouver un coup avec Prolog + gerer si timeout recu -> numPartie++; break;
 						String sens = "";
-						if(TPartie.getSens() == Sens.SUD) {
+						if(TPartie.getSens() == Sens.NORD) {
 							sens = "bottom";
 						}else {
 							sens = "top";
 						}
 						String requete = "yokai2("+grille.getGrilleProlog()+","+sens+",Piece,Ind,NewInd,CarteCapturee)."; 
 						System.out.println(requete);
-						//String requete = "yokai2([11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5],bottom,Piece,Ind,NewInd,CarteCapturee).";
 						TCoup coup = coupProlog(requete);
 						//Envoie coup
 						switch(coup.getCodeRep()) {
@@ -226,7 +226,9 @@ public class Moteur_IA {
 						}					
 						tour = false;
 						System.out.println("Coup envoye : "+coup.getCodeRep()+" "+coup.getPieceSens()+" "+coup.getPieceType()+" "+coup.getTlgDep()+" "+coup.getTcolDep()+" "+" "+coup.getTlgArr()+" "+coup.getTcolArr()+" "+coup.isEstCapt());
-					}else {					
+					}else {	
+						TCoup coup = new TCoup();
+						System.out.println("Reception coup adverse");
 						int cr = dis.readInt();
 						//Réinitialisation
 						if(cr == 0) {
@@ -237,154 +239,166 @@ public class Moteur_IA {
 							//Reception coup adverse
 							switch(cr) {
 							case 1 :
-								TCoup.setCodeRep(CodeRep.DEPLACER);
+								coup.setCodeRep(CodeRep.DEPLACER);
 								break;
 							case 2 :
-								TCoup.setCodeRep(CodeRep.DEPOSER);
+								coup.setCodeRep(CodeRep.DEPOSER);
 								break;
 							case 3 :
-								TCoup.setCodeRep(CodeRep.AUCUN);
+								coup.setCodeRep(CodeRep.AUCUN);
 								break;
 							default :
 								break;
 							}
-							if(TCoup.getCodeRep() != CodeRep.AUCUN) {
+							System.out.println(coup.getCodeRep());
+							if(coup.getCodeRep() != CodeRep.AUCUN) {
 								switch(dis.readInt()) {
 								case 0 :
-									TCoup.setPieceType(Type.KODAMA);
+									coup.setPieceType(Type.KODAMA);
 									break;
 								case 1 :
-									TCoup.setPieceType(Type.KODAMA_SAMOURAI);
+									coup.setPieceType(Type.KODAMA_SAMOURAI);
 									break;
 								case 2 :
-									TCoup.setPieceType(Type.KIRIN);
+									coup.setPieceType(Type.KIRIN);
 									break;
 								case 3 :
-									TCoup.setPieceType(Type.KOROPOKKURU);
+									coup.setPieceType(Type.KOROPOKKURU);
 									break;
 								case 4 :
-									TCoup.setPieceType(Type.ONI);
+									coup.setPieceType(Type.ONI);
 									break;
 								case 5 :
-									TCoup.setPieceType(Type.SUPER_ONI);
+									coup.setPieceType(Type.SUPER_ONI);
 									break;
 								default :
 									break;
 								}
-
+								System.out.println(coup.getPieceType());
 								switch(dis.readInt()) {
 								case 0 :
-									TCoup.setPieceSens(Sens.NORD);
+									coup.setPieceSens(Sens.NORD);
 									break;
 								case 1 :
-									TCoup.setPieceSens(Sens.SUD);
+									coup.setPieceSens(Sens.SUD);
 									break;
 								default :
 									break;
 								}
+								System.out.println(coup.getPieceSens());
 
 								switch(dis.readInt()) {
 								case 0 :
-									TCoup.setTcolDep(Colonne.A);
+									coup.setTcolDep(Colonne.A);
 									break;
 								case 1 :
-									TCoup.setTcolDep(Colonne.B);
+									coup.setTcolDep(Colonne.B);
 									break;
 								case 2 :
-									TCoup.setTcolDep(Colonne.C);
+									coup.setTcolDep(Colonne.C);
 									break;
 								case 3 :
-									TCoup.setTcolDep(Colonne.D);
+									coup.setTcolDep(Colonne.D);
 									break;
 								case 4 :
-									TCoup.setTcolDep(Colonne.E);
+									coup.setTcolDep(Colonne.E);
 									break;
 								default :
 									break;
 								}
+								System.out.println(coup.getTcolDep());
 
 								switch(dis.readInt()) {
 								case 0 :
-									TCoup.setTlgDep(Ligne.UN);
+									coup.setTlgDep(Ligne.UN);
 									break;
 								case 1 :
-									TCoup.setTlgDep(Ligne.DEUX);
+									coup.setTlgDep(Ligne.DEUX);
 									break;
 								case 2 :
-									TCoup.setTlgDep(Ligne.TROIS);
+									coup.setTlgDep(Ligne.TROIS);
 									break;
 								case 3 :
-									TCoup.setTlgDep(Ligne.QUATRE);
+									coup.setTlgDep(Ligne.QUATRE);
 									break;
 								case 4 :
-									TCoup.setTlgDep(Ligne.CINQ);
+									coup.setTlgDep(Ligne.CINQ);
 									break;
 								case 5 :
-									TCoup.setTlgDep(Ligne.SIX);
+									coup.setTlgDep(Ligne.SIX);
 									break;
 								default :
 									break;
 								}
+								System.out.println(coup.getTlgDep());
 
-								if(TCoup.getCodeRep() == CodeRep.DEPLACER) {
+								if(coup.getCodeRep() == CodeRep.DEPLACER) {
 									switch(dis.readInt()) {
 									case 0 :
-										TCoup.setTcolArr(Colonne.A);
+										coup.setTcolArr(Colonne.A);
 										break;
 									case 1 :
-										TCoup.setTcolArr(Colonne.B);
+										coup.setTcolArr(Colonne.B);
 										break;
 									case 2 :
-										TCoup.setTcolArr(Colonne.C);
+										coup.setTcolArr(Colonne.C);
 										break;
 									case 3 :
-										TCoup.setTcolArr(Colonne.D);
+										coup.setTcolArr(Colonne.D);
 										break;
 									case 4 :
-										TCoup.setTcolArr(Colonne.E);
+										coup.setTcolArr(Colonne.E);
 										break;
 									default :
 										break;
 									}
+									System.out.println(coup.getTlgArr());
 
 									switch(dis.readInt()) {
 									case 0 :
-										TCoup.setTlgArr(Ligne.UN);
+										coup.setTlgArr(Ligne.UN);
 										break;
 									case 1 :
-										TCoup.setTlgArr(Ligne.DEUX);
+										coup.setTlgArr(Ligne.DEUX);
 										break;
 									case 2 :
-										TCoup.setTlgArr(Ligne.TROIS);
+										coup.setTlgArr(Ligne.TROIS);
 										break;
 									case 3 :
-										TCoup.setTlgArr(Ligne.QUATRE);
+										coup.setTlgArr(Ligne.QUATRE);
 										break;
 									case 4 :
-										TCoup.setTlgArr(Ligne.CINQ);
+										coup.setTlgArr(Ligne.CINQ);
 										break;
 									case 5 :
-										TCoup.setTlgArr(Ligne.SIX);
+										coup.setTlgArr(Ligne.SIX);
+										break;
+									default :
+										break;
+									}
+									System.out.println(coup.getTlgArr());
+
+									switch(dis.readInt()) {
+									case 0 :
+										coup.setEstCapt(false);
+										break;
+									case 1 :
+										coup.setEstCapt(true);
 										break;
 									default :
 										break;
 									}
 
-									switch(dis.readInt()) {
-									case 0 :
-										TCoup.setEstCapt(false);
-										break;
-									case 1 :
-										TCoup.setEstCapt(true);
-										break;
-									default :
-										break;
-									}
+									System.out.println(coup.isEstCapt());
+									System.out.println("Coup recu : "+coup.getCodeRep()+" "+coup.getPieceSens()+" "+coup.getPieceType()+" "+coup.getTlgDep()+" "+coup.getTcolDep()+" "+" "+coup.getTlgArr()+" "+coup.getTcolArr()+" "+coup.isEstCapt());
+									
 									//Deplacer sur grille
 									//grille.miseAJourDeplacer(TCoup);
-								}else if(TCoup.getCodeRep() == CodeRep.DEPOSER) {
+								}else if(coup.getCodeRep() == CodeRep.DEPOSER) {
 									//Deposer sur grille
+									//grille.miseAJourDeposer(TCoup);
 								}
+								
 							}
 						}
 						tour = true;
