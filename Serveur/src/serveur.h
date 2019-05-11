@@ -12,6 +12,7 @@ int sockConx;
 int sizeAddr;
 int sockJoueurs[2];
 int nbJoueurInPartie;
+int joueurEnCours;
 clock_t timestampLastCoup;
 bool partieFinie;
 
@@ -19,7 +20,7 @@ int numPartie;
 
 typedef struct {
 	char nomJoueur[T_NOM];
-	TSensTetePiece piece;
+	TSensTetePiece sensTetePiece;
 } InfoJoueur;
 
 InfoJoueur infoJoueur[2];
@@ -34,9 +35,9 @@ void connexion(char **argv);
 
 void attenteJoueurs();
 
-void receivePartie(int joueurEnCours);
+void receivePartie();
 
-void receiveCoup(int joueurEnCours);
+void receiveCoup();
 
 void loop();
 

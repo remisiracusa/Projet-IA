@@ -38,14 +38,14 @@ typedef enum { NORD, SUD } TSensTetePiece;
 typedef struct {
   TIdReq idReq;               /* Identificateur de la requete */
   char nomJoueur[T_NOM];      /* Nom du joueur */
-  TSensTetePiece piece;       /* Sens de la tete souhaite pour la piece */
+  TSensTetePiece piece;       /* Sens de la tete souhaite pour la sensTetePiece */
 } TPartieReq;
 
 typedef enum { OK, KO } TValidSensTete;
 typedef struct {
   TCodeRep err;                   /* Code d'erreur */
   char nomAdvers[T_NOM];          /* Nom du joueur adverse */
-  TValidSensTete validSensTete;   /* Validation sens de la tete pour la piece */
+  TValidSensTete validSensTete;   /* Validation sens de la tete pour la sensTetePiece */
 } TPartieRep;
 
 
@@ -56,21 +56,21 @@ typedef enum { UN, DEUX, TROIS, QUATRE, CINQ, SIX } TLg;
 typedef enum { A, B, C, D, E } TCol;
 
 typedef struct {
-  TCol c;          /* Colonne de la position d'une piece */
-  TLg l;           /* Ligne de la position d'une piece */
+  TCol c;          /* Colonne de la position d'une sensTetePiece */
+  TLg l;           /* Ligne de la position d'une sensTetePiece */
 } TCase;
 
 /* 
- * Definition de structure pour le deplacement de piece
+ * Definition de structure pour le deplacement de sensTetePiece
  */
 typedef struct {
-  TCase  caseDep;   /* Position de depart de la piece */
-  TCase  caseArr;   /* Position d'arrivee de la piece */
-  bool estCapt;     /* Vrai si le deplacement capture une piece de l'adversaire */
+  TCase  caseDep;   /* Position de depart de la sensTetePiece */
+  TCase  caseArr;   /* Position d'arrivee de la sensTetePiece */
+  bool estCapt;     /* Vrai si le deplacement capture une sensTetePiece de l'adversaire */
 } TDeplPiece;
 
 /* 
- * Definition de structure pour le placement de piece capturee
+ * Definition de structure pour le placement de sensTetePiece capturee
  */
 typedef TCase TDeposerPiece;
 
@@ -81,22 +81,22 @@ typedef TCase TDeposerPiece;
 /* Precision des types de coups */
 typedef enum { DEPLACER, DEPOSER,  AUCUN } TCoup;
 
-/* Informations sur la piece a jouer */
+/* Informations sur la sensTetePiece a jouer */
 typedef enum { KODAMA, KODAMA_SAMOURAI, KIRIN, KOROPOKKURU, ONI, SUPER_ONI } TTypePiece;
 
 typedef struct {
-  TSensTetePiece sensTetePiece;     /* Sens de la tete pour la piece */
-  TTypePiece typePiece;             /* Type de la piece jouee */
+  TSensTetePiece sensTetePiece;     /* Sens de la tete pour la sensTetePiece */
+  TTypePiece typePiece;             /* Type de la sensTetePiece jouee */
 } TPiece;
 
 typedef struct {
   TIdReq     idRequest;     /* Identificateur de la requete */
   int        numPartie;     /* Numero de la partie (commencant a 1) */
   TCoup      typeCoup;      /* Type du coup : deplacement, placement ou aucune action */
-  TPiece     piece;         /* Info de la piece jouee */
+  TPiece     piece;         /* Info de la sensTetePiece jouee */
   union {
-    TDeplPiece deplPiece;        /* Deplacement de piece */
-    TDeposerPiece deposerPiece;  /* Placement d'une piece capturee */
+    TDeplPiece deplPiece;        /* Deplacement de sensTetePiece */
+    TDeposerPiece deposerPiece;  /* Placement d'une sensTetePiece capturee */
   } params;
 } TCoupReq;
 

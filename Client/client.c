@@ -92,10 +92,13 @@ int main(int argc, char **argv) {
 
   // gestion de la validation du sens des pieces
   if (repP.validSensTete == KO) {
+	  printf("Sens piece invalide inversion\n");
       if (sensP == SUD) {
           sensP = NORD;
       }
   }
+
+	printf("Sens piece %s", sensP == NORD ? "NORD" : "SUD");
 
   // initialisation IA
   if(sensP == NORD){
@@ -519,6 +522,8 @@ int jouerPiece(TCoupIA* coupIA, int sock, int sockIA, int numPartie, TSensTetePi
 
     printf("Coup recu de l'IA : %u\n", reqC.idRequest);
 
+	printf("Sens piece %s\n", sensP == NORD ? "NORD" : "SUD");
+	printf("Sens piece du send pour déplacement %s\n", reqC.piece.sensTetePiece == NORD ? "NORD" : "SUD");
     // envoi de la requete coup au serveur
 	err = send(sock, &reqC, sizeof(TCoupReq), 0);
 	if (err != sizeof(TCoupReq)) {
