@@ -30,6 +30,7 @@ public class Moteur_IA {
 		Socket sockComm; // Socket de communication
 		TPartie TPartie = new TPartie();
 		TCoup TCoup = new TCoup();
+		Grille grille = new Grille();
 		numPartie = 1;
 		cont = true;
 		try{
@@ -55,16 +56,25 @@ public class Moteur_IA {
 
 			while(numPartie < 3) {
 				if((numPartie == 1 && TPartie.getSens() == Sens.SUD) || (numPartie == 2 && TPartie.getSens() == Sens.NORD)) {
-					tour = true;
-				}else {
 					tour = false;
+				}else {
+					tour = true;
 				}
 				//Mise à zero de la grille
 				while(cont) {
 					if(tour) {
 
 						//Trouver un coup avec Prolog + gerer si timeout recu -> numPartie++; break;
-						TCoup coup = coupProlog();
+						String sens = "";
+						if(TPartie.getSens() == Sens.SUD) {
+							sens = "bottom";
+						}else {
+							sens = "top";
+						}
+						String requete = "yokai2("+grille.getGrilleProlog()+","+sens+",Piece,Ind,NewInd,CarteCapturee)."; 
+						System.out.println(requete);
+						//String requete = "yokai2([11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5],bottom,Piece,Ind,NewInd,CarteCapturee).";
+						TCoup coup = coupProlog(requete);
 						//Envoie coup
 						switch(coup.getCodeRep()) {
 						case DEPLACER :
@@ -81,7 +91,7 @@ public class Moteur_IA {
 						}
 
 						if(coup.getCodeRep() != CodeRep.AUCUN) {
-							coup.setPieceSens(TPartie.getSens());
+							/*coup.setPieceSens(TPartie.getSens());
 							switch(TPartie.getSens()) {
 							case NORD :
 								dos.writeInt(0);
@@ -91,7 +101,7 @@ public class Moteur_IA {
 								break;
 							default :
 								break;
-							}
+							}*/
 
 							switch(coup.getPieceType()) {
 							case KODAMA :
@@ -222,7 +232,6 @@ public class Moteur_IA {
 						if(cr == 0) {
 							TPartie.setCodeReq(CodeReq.INIT);														
 							System.out.println("Fin de la partie !");
-							numPartie++;
 							break;
 						}else {
 							//Reception coup adverse
@@ -372,6 +381,7 @@ public class Moteur_IA {
 										break;
 									}
 									//Deplacer sur grille
+									//grille.miseAJourDeplacer(TCoup);
 								}else if(TCoup.getCodeRep() == CodeRep.DEPOSER) {
 									//Deposer sur grille
 								}
@@ -395,9 +405,9 @@ public class Moteur_IA {
 
 	}
 	
-	public static TCoup coupProlog() {
+	public static TCoup coupProlog(String requete) {
 		TCoup coup = new TCoup();
-		String saisie = new String("yokai2([11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5],top,Piece,Ind,NewInd,CarteCapturee).");
+		String saisie = new String(requete);
 
 		SICStus sp = null;
 

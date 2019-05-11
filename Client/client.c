@@ -36,10 +36,10 @@ int main(int argc, char **argv) {
       numPartie,				// numéro de la partie
       port,						// port du serveur
       tour,						// tour de partie
-      cont = 1;					// fin de partie
+      cont;	    				// fin de partie
   char* host;					// nom de la machine
   char nomJoueur[T_NOM];		// nom du joueur
-  TSensTetePiece sensP = SUD;   // Sens des pieces
+  TSensTetePiece sensP = NORD;   // Sens des pieces
   TPartieReq reqP;		 		// requete partie
   TPartieRep repP;				// reponse partie
   TCoupReq reqC;		 		// requete coup
@@ -94,8 +94,6 @@ int main(int argc, char **argv) {
   if (repP.validSensTete == KO) {
       if (sensP == SUD) {
           sensP = NORD;
-      }else{
-          sensP = SUD;
       }
   }
 
@@ -127,24 +125,28 @@ int main(int argc, char **argv) {
 
   // gestion de deux parties de jeu
   while (numPartie < 3) {
+      cont = 1;
       if ((numPartie == 1 && sensP == SUD) || (numPartie == 2 && sensP == NORD)) {
-          tour = 1;
-      }else{
           tour = 0;
+      }else{
+          tour = 1;
       }
 
       // gestion de la partie en cours
       while (cont) {
           if (tour) {
               // mon tour de jeu
-              err = jouerPiece(&reqC, &repC, &coupIA, sock, sockIA, numPartie);
+              err = jouerPiece(&coupIA, sock, sockIA, numPartie, sensP);
               if(err != 0 && err != -1){
                   return err;
               }else if(err == -1){
                   // Timeout recu
-                  cont = 0;
+                  printf("Fin de la partie\n");
+                  break;
               }else{
-                  cont = validationCoup('M', &repC, sock);
+                  printf("Mon tour attente validation\n");
+                  cont = validationCoup('M', sock);
+                  printf("cont = %i\n", cont);
                   if(cont != 0 && cont != 1){
                       return cont;
                   }
@@ -152,19 +154,26 @@ int main(int argc, char **argv) {
               tour = 0;
           }else{
               // tour de jeu adverse
-              cont = validationCoup('A', &repC, sock);
+              printf("Tour adverse attente validation\n");
+              cont = validationCoup('A', sock);
+              printf("cont = %i\n", cont);
               if(cont != 0 && cont != 1){
                   return cont;
               }
               if (cont != 0) {
-                  err = coupAdverse(&reqC, &coupIA, sock, sockIA);
+                  err = coupAdverse(&coupIA, sock, sockIA);
                   if(err != 0){
                       return err;
                   }
+              }else{
+                  printf("Fin de la partie\n");
+                  break;
               }
               tour = 1;
           }
+          printf("Tour suivant\n");
       }
+      printf("Partie suivante\n");
       numPartie++;
       partieIA.codeReq = htonl(INIT);
 
@@ -186,16 +195,13 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int sockIA, int numPartie){
+int jouerPiece(TCoupIA* coupIA, int sock, int sockIA, int numPartie, TSensTetePiece sensP){
     int err;
 	int err2 = 0;
 	int on = 1;
 	int off = 0;
-	reqC->idRequest = COUP;
-	reqC->numPartie = numPartie;
-	reqC->typeCoup = DEPLACER;
-	reqC->piece.sensTetePiece = SUD;
-	reqC->piece.typePiece = ONI;
+    TCoupRep repC;
+    TCoupReq reqC;
 
 	//Rendre socket avec le serveur non bloquante
     err = ioctl(sock,FIONBIO,&on);
@@ -221,9 +227,9 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
 		return -6;
 	}
 	coupIA->codeRep = htonl(coupIA->codeRep);
-
+    reqC.idRequest = COUP;
 	if (coupIA->codeRep != T_AUCUN) {
-		do{
+		/*do{
 			// verification si timeout recu
 			err2 = recv(sock, &repC, sizeof(TCoupRep), MSG_PEEK);
 			if(err2 == sizeof(TCoupRep)){
@@ -243,8 +249,8 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
 			reqC->piece.sensTetePiece = NORD;
 		}else{
 			reqC->piece.sensTetePiece = SUD;
-		}
-
+		}*/
+        reqC.piece.sensTetePiece = sensP;
 		do{
 			// verification si timeout recu
 			err2 = recv(sock, &repC, sizeof(TCoupRep), MSG_PEEK);
@@ -264,27 +270,27 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
 	
 		switch (coupIA->typePiece) {
 			case T_KODAMA:
-				reqC->piece.typePiece = KODAMA;
+				reqC.piece.typePiece = KODAMA;
 				break;
 
 			case T_KODAMA_SAMOURAI:
-				reqC->piece.typePiece = KODAMA_SAMOURAI;
+				reqC.piece.typePiece = KODAMA_SAMOURAI;
 				break;
 
 			case T_KIRIN:
-				reqC->piece.typePiece = KIRIN;
+				reqC.piece.typePiece = KIRIN;
 				break;
 
 			case T_KOROPOKKURU:
-				reqC->piece.typePiece = KOROPOKKURU;
+				reqC.piece.typePiece = KOROPOKKURU;
 				break;
 
 			case T_ONI:
-				reqC->piece.typePiece = ONI;
+				reqC.piece.typePiece = ONI;
 				break;
 
 			case T_SUPER_ONI:
-				reqC->piece.typePiece = SUPER_ONI;
+				reqC.piece.typePiece = SUPER_ONI;
 				break;
 
 			default :
@@ -311,27 +317,27 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
 
         switch (coupIA->TlgDep) {
             case T_UN:
-                reqC->params.deplPiece.caseDep.l = UN;
+                reqC.params.deplPiece.caseDep.l = UN;
                 break;
 
             case T_DEUX:
-                reqC->params.deplPiece.caseDep.l = DEUX;
+                reqC.params.deplPiece.caseDep.l = DEUX;
                 break;
 
             case T_TROIS:
-                reqC->params.deplPiece.caseDep.l = TROIS;
+                reqC.params.deplPiece.caseDep.l = TROIS;
                 break;
 
             case T_QUATRE:
-                reqC->params.deplPiece.caseDep.l = QUATRE;
+                reqC.params.deplPiece.caseDep.l = QUATRE;
                 break;
 
             case T_CINQ:
-                reqC->params.deplPiece.caseDep.l = CINQ;
+                reqC.params.deplPiece.caseDep.l = CINQ;
                 break;
 
             case T_SIX:
-                reqC->params.deplPiece.caseDep.l = SIX;
+                reqC.params.deplPiece.caseDep.l = SIX;
                 break;
 
             default :
@@ -357,23 +363,23 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
 		coupIA->TcolDep = ntohl(coupIA->TcolDep);
         switch (coupIA->TcolDep) {
             case T_A:
-                reqC->params.deplPiece.caseDep.c = A;
+                reqC.params.deplPiece.caseDep.c = A;
                 break;
 
             case T_B:
-                reqC->params.deplPiece.caseDep.c = B;
+                reqC.params.deplPiece.caseDep.c = B;
                 break;
 
             case T_C:
-                reqC->params.deplPiece.caseDep.c = C;
+                reqC.params.deplPiece.caseDep.c = C;
                 break;
 
             case T_D:
-                reqC->params.deplPiece.caseDep.c = D;
+                reqC.params.deplPiece.caseDep.c = D;
                 break;
 
             case T_E:
-                reqC->params.deplPiece.caseDep.c = E;
+                reqC.params.deplPiece.caseDep.c = E;
                 break;
 
             default :
@@ -381,7 +387,7 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
         }
 
 		if (coupIA->codeRep == T_DEPLACER) {
-			reqC->typeCoup = DEPLACER;
+			reqC.typeCoup = DEPLACER;
 			do{
 				// verification si timeout recu
 				err2 = recv(sock, &repC, sizeof(TCoupRep), MSG_PEEK);
@@ -402,27 +408,27 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
 
             switch (coupIA->TlgArr) {
                 case T_UN:
-                    reqC->params.deplPiece.caseArr.l = UN;
+                    reqC.params.deplPiece.caseArr.l = UN;
                     break;
 
                 case T_DEUX:
-                    reqC->params.deplPiece.caseArr.l = DEUX;
+                    reqC.params.deplPiece.caseArr.l = DEUX;
                     break;
 
                 case T_TROIS:
-                    reqC->params.deplPiece.caseArr.l = TROIS;
+                    reqC.params.deplPiece.caseArr.l = TROIS;
                     break;
 
                 case T_QUATRE:
-                    reqC->params.deplPiece.caseArr.l = QUATRE;
+                    reqC.params.deplPiece.caseArr.l = QUATRE;
                     break;
 
                 case T_CINQ:
-                    reqC->params.deplPiece.caseArr.l = CINQ;
+                    reqC.params.deplPiece.caseArr.l = CINQ;
                     break;
 
                 case T_SIX:
-                    reqC->params.deplPiece.caseArr.l = SIX;
+                    reqC.params.deplPiece.caseArr.l = SIX;
                     break;
 
                 default :
@@ -450,23 +456,23 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
 			coupIA->TcolArr = ntohl(coupIA->TcolArr);
             switch (coupIA->TcolArr) {
                 case T_A:
-                    reqC->params.deplPiece.caseArr.c = A;
+                    reqC.params.deplPiece.caseArr.c = A;
                     break;
 
                 case T_B:
-                    reqC->params.deplPiece.caseArr.c = B;
+                    reqC.params.deplPiece.caseArr.c = B;
                     break;
 
                 case T_C:
-                    reqC->params.deplPiece.caseArr.c = C;
+                    reqC.params.deplPiece.caseArr.c = C;
                     break;
 
                 case T_D:
-                    reqC->params.deplPiece.caseArr.c = D;
+                    reqC.params.deplPiece.caseArr.c = D;
                     break;
 
                 case T_E:
-                    reqC->params.deplPiece.caseArr.c = E;
+                    reqC.params.deplPiece.caseArr.c = E;
                     break;
 
                 default :
@@ -490,20 +496,31 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
 
 			coupIA->estCapt = ntohl(coupIA->estCapt);
 			if (coupIA->estCapt) {
-				reqC->params.deplPiece.estCapt = true;
+				reqC.params.deplPiece.estCapt = true;
 			}else{
-				reqC->params.deplPiece.estCapt = false;
+				reqC.params.deplPiece.estCapt = false;
 			}
 
 		}else if (coupIA->codeRep == T_DEPLACER) {
-			reqC->typeCoup = DEPOSER;
+			reqC.typeCoup = DEPOSER;
 		}
 	}else{
 		// Aucun
-		reqC->typeCoup = AUCUN;
+		reqC.typeCoup = AUCUN;
 	}
+    reqC.numPartie = numPartie;
+    printf("%u\n",reqC.idRequest);
+    printf("%u\n",reqC.numPartie);
+    printf("%u\n",reqC.typeCoup);
+    printf("%u\n",reqC.piece.sensTetePiece);
+    printf("%u\n",reqC.piece.typePiece);
+    printf("%u\n",reqC.params.deplPiece.caseDep.c);
+    printf("%u\n",reqC.params.deplPiece.caseDep.l);
+    printf("%u\n",reqC.params.deplPiece.caseArr.c);
+    printf("%u\n",reqC.params.deplPiece.caseArr.l);
+    printf("%u\n",reqC.params.deplPiece.estCapt);
 
-	// envoi de la requete coup au serveur
+    // envoi de la requete coup au serveur
 	err = send(sock, &reqC, sizeof(TCoupReq), 0);
 	if (err != sizeof(TCoupReq)) {
 		perror("(client) erreur sur le send");
@@ -521,8 +538,8 @@ int jouerPiece(TCoupReq* reqC, TCoupRep* repC, TCoupIA* coupIA, int sock, int so
 	return 0;
 }
 
-int coupAdverse(TCoupReq* reqC, TCoupIA* coupIA, int sock, int sockIA){
-
+int coupAdverse(TCoupIA* coupIA, int sock, int sockIA){
+    TCoupReq reqC;
 	// reception du coup adverse
 	int err = recv(sock, &reqC, sizeof(TCoupReq), 0);
 	if (err != sizeof(TCoupReq)) {
@@ -532,7 +549,7 @@ int coupAdverse(TCoupReq* reqC, TCoupIA* coupIA, int sock, int sockIA){
 	}
 
 	// transmission coup adverse a l'IA
-	switch (reqC->typeCoup) {
+	switch (reqC.typeCoup) {
 		case DEPLACER :
 				coupIA->codeRep = htonl(T_DEPLACER);
 				break;
@@ -556,8 +573,8 @@ int coupAdverse(TCoupReq* reqC, TCoupIA* coupIA, int sock, int sockIA){
 		return -5;
 	}
 	
-	if(reqC->typeCoup != AUCUN){
-		switch(reqC->piece.typePiece) {
+	if(reqC.typeCoup != AUCUN){
+		switch(reqC.piece.typePiece) {
 			case KODAMA:
 				coupIA->typePiece = htonl(T_KODAMA);
 				break;
@@ -586,7 +603,7 @@ int coupAdverse(TCoupReq* reqC, TCoupIA* coupIA, int sock, int sockIA){
 				break;
 		}
 
-		if (reqC->piece.sensTetePiece == NORD) {
+		if (reqC.piece.sensTetePiece == NORD) {
 			coupIA->sensPiece = htonl(T_NORD);
 		}else{
 			coupIA->sensPiece = htonl(T_SUD);
@@ -606,7 +623,7 @@ int coupAdverse(TCoupReq* reqC, TCoupIA* coupIA, int sock, int sockIA){
 			return -5;
 		}
 
-		switch (reqC->params.deplPiece.caseDep.c) {
+		switch (reqC.params.deplPiece.caseDep.c) {
 			case A:
 				coupIA->TcolDep = htonl(T_A);
 				break;
@@ -631,7 +648,7 @@ int coupAdverse(TCoupReq* reqC, TCoupIA* coupIA, int sock, int sockIA){
 				break;
 		}
 
-		switch (reqC->params.deplPiece.caseDep.l) {
+		switch (reqC.params.deplPiece.caseDep.l) {
 			case UN:
 				coupIA->TlgDep = htonl(T_UN);
 				break;
@@ -675,7 +692,7 @@ int coupAdverse(TCoupReq* reqC, TCoupIA* coupIA, int sock, int sockIA){
 		}
 
 		if (coupIA->codeRep == T_DEPLACER) {
-			switch (reqC->params.deplPiece.caseArr.c) {
+			switch (reqC.params.deplPiece.caseArr.c) {
 					case A:
 						coupIA->TcolArr = htonl(T_A);
 						break;
@@ -700,7 +717,7 @@ int coupAdverse(TCoupReq* reqC, TCoupIA* coupIA, int sock, int sockIA){
 						break;
 			}
 
-			switch (reqC->params.deplPiece.caseArr.l) {
+			switch (reqC.params.deplPiece.caseArr.l) {
 					case UN:
 						coupIA->TlgArr = htonl(T_UN);
 						break;
@@ -729,7 +746,7 @@ int coupAdverse(TCoupReq* reqC, TCoupIA* coupIA, int sock, int sockIA){
 						break;
 			}
 
-			if (reqC->params.deplPiece.estCapt) {
+			if (reqC.params.deplPiece.estCapt) {
 				coupIA->estCapt = htonl(T_O);
 			}else{
 				coupIA->estCapt = htonl(T_N);
@@ -760,8 +777,9 @@ int coupAdverse(TCoupReq* reqC, TCoupIA* coupIA, int sock, int sockIA){
 	return 0;
 }
 
-int validationCoup(char joueur, TCoupRep* repC, int sock){
+int validationCoup(char joueur, int sock){
 	// reception de la validation d'un coup
+	TCoupRep repC;
 	int cont = 1;
 	int err = recv(sock, &repC, sizeof(TCoupRep), 0);
 	if (err != sizeof(TCoupRep)) {
@@ -769,12 +787,14 @@ int validationCoup(char joueur, TCoupRep* repC, int sock){
 		shutdown(sock, SHUT_RDWR); close(sock);
 		return -6;
 	}
-
-	if(repC->err != ERR_OK){
+    printf("repC.err : %u\n", repC.err);
+	if(repC.err != ERR_OK){
 		cont = 0;
-		switch (repC->validCoup) {
+		printf("validCoup : %u\n", repC.validCoup);
+		switch (repC.validCoup) {
 				case VALID :
 						break;
+				        printf("VAL²ID\n");
 
 				case TIMEOUT :
 						printf("Erreur TIMEOUT\n");
@@ -788,7 +808,7 @@ int validationCoup(char joueur, TCoupRep* repC, int sock){
 					break;
 		}
 		if (joueur == 'M') {		
-			switch (repC->propCoup) {
+			switch (repC.propCoup) {
 				case GAGNE :
 						printf("Gagne");
 						break;
@@ -805,7 +825,7 @@ int validationCoup(char joueur, TCoupRep* repC, int sock){
 					break;
 			}
 		}else{
-			switch (repC->propCoup) {
+			switch (repC.propCoup) {
 				case GAGNE :
 						printf("Perdu");
 						break;
