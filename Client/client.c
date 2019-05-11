@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
     close(sock);
     return -5;
   }
-
+  printf("Initialiasation IA\n");
   // gestion de deux parties de jeu
   while (numPartie < 3) {
       cont = 1;
@@ -131,41 +131,46 @@ int main(int argc, char **argv) {
       }else{
           tour = 0;
       }
-
+      printf("Debut partie numéro : %i\n",numPartie);
       // gestion de la partie en cours
       while (cont) {
           if (tour) {
               // mon tour de jeu
+              printf("Mon tour\n");
               err = jouerPiece(&coupIA, sock, sockIA, numPartie, sensP);
               if(err != 0 && err != -1){
+                  printf("Erreur jouerPiece\n");
                   return err;
               }else if(err == -1){
                   // Timeout recu
-                  printf("Fin de la partie\n");
+                  printf("Timeout recu fin de la partie\n");
                   break;
               }else{
-                  printf("Mon tour attente validation\n");
+                  printf("Attente validation\n");
                   cont = validationCoup('M', sock);
-                  printf("cont = %i\n", cont);
                   if(cont != 0 && cont != 1){
+                      printf("Erreur validationCoup\n");
                       return cont;
                   }
               }
               tour = 0;
           }else{
               // tour de jeu adverse
-              printf("Tour adverse attente validation\n");
+              printf("Tour adverse\n");
+              printf("Attente validation\n");
               cont = validationCoup('A', sock);
-              printf("cont = %i\n", cont);
               if(cont != 0 && cont != 1){
+                  printf("Erreur validationCoup\n");
                   return cont;
               }
               if (cont != 0) {
                   err = coupAdverse(&coupIA, sock, sockIA);
                   if(err != 0){
+                      printf("Erreur coupAdverse\n");
                       return err;
                   }
               }else{
+                  printf("Coup invalide\n");
                   printf("Fin de la partie\n");
                   break;
               }
@@ -509,16 +514,8 @@ int jouerPiece(TCoupIA* coupIA, int sock, int sockIA, int numPartie, TSensTetePi
 		reqC.typeCoup = AUCUN;
 	}
     reqC.numPartie = numPartie;
-    printf("%u\n",reqC.idRequest);
-    printf("%u\n",reqC.numPartie);
-    printf("%u\n",reqC.typeCoup);
-    printf("%u\n",reqC.piece.sensTetePiece);
-    printf("%u\n",reqC.piece.typePiece);
-    printf("%u\n",reqC.params.deplPiece.caseDep.c);
-    printf("%u\n",reqC.params.deplPiece.caseDep.l);
-    printf("%u\n",reqC.params.deplPiece.caseArr.c);
-    printf("%u\n",reqC.params.deplPiece.caseArr.l);
-    printf("%u\n",reqC.params.deplPiece.estCapt);
+
+    printf("Coup recu de l'IA\n");
 
     // envoi de la requete coup au serveur
 	err = send(sock, &reqC, sizeof(TCoupReq), 0);
@@ -788,7 +785,7 @@ int validationCoup(char joueur, int sock){
 		shutdown(sock, SHUT_RDWR); close(sock);
 		return -6;
 	}
-    printf("repC.err : %u\n", repC.err);
+
 	if(repC.err != ERR_OK){
 		cont = 0;
 		printf("validCoup : %u\n", repC.validCoup);
@@ -811,15 +808,15 @@ int validationCoup(char joueur, int sock){
 		if (joueur == 'M') {		
 			switch (repC.propCoup) {
 				case GAGNE :
-						printf("Gagne");
+						printf("Gagne\n");
 						break;
 
 				case NUL :
-						printf("Perdu match null");
+						printf("Perdu match null\n");
 						break;
 
 				case PERDU :
-						printf("Perdu");
+						printf("Perdu\n");
 						break;
 
 				default :
@@ -828,15 +825,15 @@ int validationCoup(char joueur, int sock){
 		}else{
 			switch (repC.propCoup) {
 				case GAGNE :
-						printf("Perdu");
+						printf("Perdu\n");
 						break;
 
 				case NUL :
-						printf("Perdu match null");
+						printf("Perdu match null\n");
 						break;
 
 				case PERDU :
-						printf("Gagne");
+						printf("Gagne\n");
 						break;
 
 				default :

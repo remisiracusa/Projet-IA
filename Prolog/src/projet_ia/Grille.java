@@ -5,6 +5,8 @@ import java.util.List;
 
 import projet_ia.TCoup.Type;
 import projet_ia.TPartie.Sens;
+import se.sics.jasper.SICStus;
+import se.sics.jasper.SPException;
 
 public class Grille {
 	private List<Integer> grille;
@@ -89,8 +91,30 @@ public class Grille {
 		if(coup.getPieceSens() == Sens.SUD) {
 			piece += 6;
 		}
-		grille.set(cgDep.numCase, 0);
-		grille.set(cgArr.numCase, piece);
+		grille.set(cgDep.numCase-1, 0);
+		grille.set(cgArr.numCase-1, piece);
 		
-	}	
+	}
+	
+	public SICStus connexionSicstus() {
+		SICStus sp = null;
+
+		try {
+
+			// Creation d'un object SICStus
+			sp = new SICStus();
+
+			// Chargement d'un fichier prolog .pl
+			sp.load("./src/projet_ia/yokai.pl");
+
+		}
+		// exception déclanchée par SICStus lors de la création de l'objet sp
+		catch (SPException e) {
+			System.err.println("Exception SICStus Prolog : " + e);
+			e.printStackTrace();
+			System.exit(-2);
+		}
+
+		return sp;
+	}
 }

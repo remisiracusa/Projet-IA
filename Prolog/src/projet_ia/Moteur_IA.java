@@ -40,7 +40,9 @@ public class Moteur_IA {
 			OutputStream os = sockComm.getOutputStream();
 			DataOutputStream dos = new DataOutputStream(os);
 			System.out.println("Début du serveur");
-
+			
+			SICStus sp = grille.connexionSicstus();
+			
 			//Initialisation
 			if(dis.readInt() == 0) {
 				TPartie.setCodeReq(CodeReq.INIT);
@@ -74,7 +76,7 @@ public class Moteur_IA {
 						}
 						String requete = "yokai2("+grille.getGrilleProlog()+","+sens+",Piece,Ind,NewInd,CarteCapturee)."; 
 						System.out.println(requete);
-						TCoup coup = coupProlog(requete);
+						TCoup coup = coupProlog(requete, sp);
 						//Envoie coup
 						switch(coup.getCodeRep()) {
 						case DEPLACER :
@@ -220,6 +222,7 @@ public class Moteur_IA {
 									dos.writeInt(0);
 								}
 								//Deplacer sur grille
+								grille.miseAJourDeplacer(coup);
 							}else {
 								//Deposer sur grille
 							}
@@ -393,7 +396,7 @@ public class Moteur_IA {
 									System.out.println("Coup recu : "+coup.getCodeRep()+" "+coup.getPieceSens()+" "+coup.getPieceType()+" "+coup.getTlgDep()+" "+coup.getTcolDep()+" "+" "+coup.getTlgArr()+" "+coup.getTcolArr()+" "+coup.isEstCapt());
 									
 									//Deplacer sur grille
-									//grille.miseAJourDeplacer(TCoup);
+									grille.miseAJourDeplacer(coup);
 								}else if(coup.getCodeRep() == CodeRep.DEPOSER) {
 									//Deposer sur grille
 									//grille.miseAJourDeposer(TCoup);
@@ -419,28 +422,11 @@ public class Moteur_IA {
 
 	}
 	
-	public static TCoup coupProlog(String requete) {
+	public static TCoup coupProlog(String requete, SICStus sp) {
 		TCoup coup = new TCoup();
 		String saisie = new String(requete);
 
-		SICStus sp = null;
-
-		try {
-
-			// Creation d'un object SICStus
-			sp = new SICStus();
-
-			// Chargement d'un fichier prolog .pl
-			sp.load("./src/projet_ia/yokai.pl");
-
-		}
-		// exception déclanchée par SICStus lors de la création de l'objet sp
-		catch (SPException e) {
-			System.err.println("Exception SICStus Prolog : " + e);
-			e.printStackTrace();
-			System.exit(-2);
-		}
-
+		
 		// lecture au clavier d'une requète Prolog
 		//System.out.print("| ?- ");
 		//saisie = saisieClavier();
@@ -460,15 +446,16 @@ public class Moteur_IA {
 			//   - en fonction de la saisie de l'utilisateur
 			//   - instanciera results avec les résultats de la requète
 			Query qu = sp.openQuery(saisie,results);
-
+			
 			// parcours des solutions
 			boolean moreSols = qu.nextSolution();
 
 			// on ne boucle que si la liste des instanciations de variables est non vide
 			boolean continuer = !(results.isEmpty());
 
-			while (moreSols && continuer) {
+			if (moreSols && continuer) {
 				//Voir pour deposer
+				System.out.println("coup prolog deplacer");
 				coup.setCodeRep(CodeRep.DEPLACER);
 				// chaque solution est sockée dans un HashMap
 				// sous la forme : VariableProlog -> Valeur
@@ -536,10 +523,12 @@ public class Moteur_IA {
 				if (saisie.equals(";")) {
 					// solution suivante --> results contient la nouvelle solution
 					moreSols = qu.nextSolution();
-				}
-				else {
+				}else {
 					continuer = false;
 				}
+			}else {
+				coup.setCodeRep(CodeRep.AUCUN);
+				System.out.println("coup prolog aucun");
 			}
 
 			// fermeture de la requète
