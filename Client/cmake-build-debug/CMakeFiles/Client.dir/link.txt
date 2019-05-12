@@ -1,0 +1,1 @@
+/usr/bin/cc  -g   CMakeFiles/Client.dir/fonctionsTCP/fonctionsTCP.c.o CMakeFiles/Client.dir/client.c.o  -o Client 

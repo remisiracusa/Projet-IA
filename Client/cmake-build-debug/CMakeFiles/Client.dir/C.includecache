@@ -1,0 +1,72 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/mnt/d/ProjetMachineVirtuelle(Yokai no-mori)/git/Projet-IA/Client/client.c
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+unistd.h
+-
+sys/types.h
+-
+sys/socket.h
+-
+netinet/in.h
+-
+arpa/inet.h
+-
+netdb.h
+-
+errno.h
+-
+sys/ioctl.h
+-
+fonctionsTCP/fonctionsTCP.h
+/mnt/d/ProjetMachineVirtuelle(Yokai no-mori)/git/Projet-IA/Client/fonctionsTCP/fonctionsTCP.h
+protocolYokai.h
+/mnt/d/ProjetMachineVirtuelle(Yokai no-mori)/git/Projet-IA/Client/protocolYokai.h
+protocol.h
+/mnt/d/ProjetMachineVirtuelle(Yokai no-mori)/git/Projet-IA/Client/protocol.h
+client.h
+/mnt/d/ProjetMachineVirtuelle(Yokai no-mori)/git/Projet-IA/Client/client.h
+
+/mnt/d/ProjetMachineVirtuelle(Yokai no-mori)/git/Projet-IA/Client/client.h
+
+/mnt/d/ProjetMachineVirtuelle(Yokai no-mori)/git/Projet-IA/Client/fonctionsTCP/fonctionsTCP.c
+string.h
+-
+stdio.h
+-
+stdlib.h
+-
+unistd.h
+-
+sys/socket.h
+-
+netinet/in.h
+-
+errno.h
+-
+sys/types.h
+-
+arpa/inet.h
+-
+netdb.h
+-
+
+/mnt/d/ProjetMachineVirtuelle(Yokai no-mori)/git/Projet-IA/Client/fonctionsTCP/fonctionsTCP.h
+
+/mnt/d/ProjetMachineVirtuelle(Yokai no-mori)/git/Projet-IA/Client/protocol.h
+
+/mnt/d/ProjetMachineVirtuelle(Yokai no-mori)/git/Projet-IA/Client/protocolYokai.h
+stdbool.h
+-
+
