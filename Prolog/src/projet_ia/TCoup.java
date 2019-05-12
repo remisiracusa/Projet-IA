@@ -7,9 +7,9 @@ import java.util.Map;
 
 public class TCoup {
 	private CodeRep codeRep;    //erreur 0, deplacement 1, piece capturee 2, aucun 3
-	private Sens pieceSens;    	//sens de la piece
-	private Type pieceType;    	//type de la piece
-	private Ligne TlgDep;     	//si deplacement ligne depart
+	private Sens pieceSens;        //sens de la piece
+	private Type pieceType;        //type de la piece
+	private Ligne TlgDep;        //si deplacement ligne depart
 	private Colonne TcolDep;    //si deplacement colonne depart
 	private Ligne TlgArr;       //si deplacement ligne arrivee
 	private Colonne TcolArr;    //si deplacement colonne arrivee
@@ -28,8 +28,9 @@ public class TCoup {
 		KOROPOKKURU(3),
 		ONI(4),
 		SUPER_ONI(5);
-		
+
 		private int id;
+
 		Type(int id) {
 			this.id = id;
 		}
@@ -37,7 +38,7 @@ public class TCoup {
 		public int getId() {
 			return id;
 		}
-		
+
 	}
 
 	enum Colonne {
@@ -108,12 +109,12 @@ public class TCoup {
 		int colonne = ((numCase % 5) + 1);
 		return new CoordGrille(numCase, Ligne.getEnum(ligne), Colonne.getEnum(colonne));
 	}
-	
+
 	public CoordGrille convertCoordGrilleToInt(TCoup.Colonne col, TCoup.Ligne lg) {
 		int numCase = 0;
 		int ligne = lg.getId();
 		int colonne = col.getId();
-		numCase = ((ligne-1)*(5-colonne)) + ligne*colonne;
+		numCase = ((ligne - 1) * (5 - colonne)) + ligne * colonne;
 		return new CoordGrille(numCase, lg, col);
 	}
 
@@ -186,13 +187,13 @@ class CoordGrille {
 	public TCoup.Colonne col;
 	public TCoup.Ligne row;
 	public int numCase;
-	
+
 	public CoordGrille(int numCase, TCoup.Ligne row, TCoup.Colonne col) {
 		this.row = row;
 		this.col = col;
 		this.numCase = numCase;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "{" + col +
