@@ -12,5 +12,5 @@ UTILISATION :
 
 1. compilation : make
 
-2. execution du client : client ip_machine_serveur portServeur nomJoueur
-			 (ex: client 127.0.0.1 2609 joueur1)
+2. execution du client : client ip_machine_serveur portServeur nomJoueur portIA
+			 (ex: client 127.0.0.1 2609 joueur1 2019)
