@@ -66,7 +66,6 @@ int main(int argc, char **argv) {
   // connexion avec le moteur IA
   sockIA = socketClient("127.0.0.1", portIA);
 
-
   // demande d'une nouvelle partie
   reqP.idReq = PARTIE;
   strcpy(reqP.nomJoueur, nomJoueur);
@@ -122,7 +121,7 @@ int main(int argc, char **argv) {
     close(sock);
     return -5;
   }
-  printf("Initialiasation IA\n");
+
   // gestion de deux parties de jeu
   while (numPartie < 3) {
       cont = 1;
@@ -131,56 +130,46 @@ int main(int argc, char **argv) {
       }else{
           tour = 0;
       }
-      printf("Debut partie numéro : %i\n",numPartie);
+
       // gestion de la partie en cours
       while (cont) {
           if (tour) {
-              printf("sensP : %u", sensP);
+
               // mon tour de jeu
-              printf("Mon tour\n");
               err = jouerPiece(&coupIA, sock, sockIA, numPartie, sensP);
               if(err != 0 && err != -1){
-                  printf("Erreur jouerPiece\n");
                   return err;
               }else if(err == -1){
                   // Timeout recu
-                  printf("Timeout recu fin de la partie\n");
                   break;
               }else{
-                  printf("Attente validation\n");
                   cont = validationCoup('M', sock);
                   if(cont != 0 && cont != 1){
-                      printf("Erreur validationCoup\n");
                       return cont;
                   }
               }
               tour = 0;
           }else{
-              printf("sensP : %u", sensP);
+
               // tour de jeu adverse
-              printf("Tour adverse\n");
-              printf("Attente validation\n");
               cont = validationCoup('A', sock);
               if(cont != 0 && cont != 1){
-                  printf("Erreur validationCoup\n");
                   return cont;
               }
               if (cont != 0) {
                   err = coupAdverse(&coupIA, sock, sockIA);
                   if(err != 0){
-                      printf("Erreur coupAdverse\n");
                       return err;
                   }
               }else{
-                  printf("Coup invalide\n");
-                  printf("Fin de la partie\n");
+                  //Fin de la partie
                   break;
               }
               tour = 1;
           }
-          printf("Tour suivant\n");
       }
-      printf("Partie suivante\n");
+
+      //Partie suivante
       numPartie++;
       partieIA.codeReq = htonl(INIT);
 
@@ -202,6 +191,7 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+//Jouer un coup
 int jouerPiece(TCoupIA* coupIA, int sock, int sockIA, int numPartie, TSensTetePiece sensP){
     int err;
 	int err2 = 0;
@@ -236,27 +226,6 @@ int jouerPiece(TCoupIA* coupIA, int sock, int sockIA, int numPartie, TSensTetePi
 	coupIA->codeRep = htonl(coupIA->codeRep);
     reqC.idRequest = COUP;
 	if (coupIA->codeRep != T_AUCUN) {
-		/*do{
-			// verification si timeout recu
-			err2 = recv(sock, &repC, sizeof(TCoupRep), MSG_PEEK);
-			if(err2 == sizeof(TCoupRep)){
-                recv(sock, &repC, sizeof(TCoupRep), 0);
-				return -1;
-			}
-			err = recv(sockIA, &coupIA->sensPiece, sizeof(int), MSG_PEEK);
-		}while(err != sizeof(int));
-        recv(sockIA, &coupIA->sensPiece, sizeof(int), 0);
-		if (err != sizeof(int)) {
-			perror("(client) erreur dans la reception");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -6;
-		}
-		coupIA->sensPiece = ntohl(coupIA->sensPiece);
-		if (coupIA->sensPiece == 0) {
-			reqC->piece.sensTetePiece = NORD;
-		}else{
-			reqC->piece.sensTetePiece = SUD;
-		}*/
         reqC.piece.sensTetePiece = sensP;
 		do{
 			// verification si timeout recu
@@ -268,11 +237,6 @@ int jouerPiece(TCoupIA* coupIA, int sock, int sockIA, int numPartie, TSensTetePi
 			err = recv(sockIA, &coupIA->typePiece, sizeof(int), MSG_PEEK);
 		}while(err != sizeof(int));
         recv(sockIA, &coupIA->typePiece, sizeof(int), 0);
-		if (err != sizeof(int)) {
-			perror("(client) erreur dans la reception");
-			shutdown(sockIA, SHUT_RDWR); close(sockIA);
-			return -6;
-		}
 		coupIA->typePiece = ntohl(coupIA->typePiece);
 	
 		switch (coupIA->typePiece) {
@@ -512,12 +476,11 @@ int jouerPiece(TCoupIA* coupIA, int sock, int sockIA, int numPartie, TSensTetePi
 			reqC.typeCoup = DEPOSER;
 		}
 	}else{
+
 		// Aucun
 		reqC.typeCoup = AUCUN;
 	}
     reqC.numPartie = numPartie;
-
-    printf("Coup recu de l'IA : %u\n", reqC.idRequest);
 
     // envoi de la requete coup au serveur
 	err = send(sock, &reqC, sizeof(TCoupReq), 0);
@@ -526,7 +489,7 @@ int jouerPiece(TCoupIA* coupIA, int sock, int sockIA, int numPartie, TSensTetePi
 		shutdown(sock, SHUT_RDWR); close(sock);
 		return -5;
 	}
-    printf("Coup envoye au serveur\n");
+
     // rendre socket avec le serveur bloquante
     err = ioctl(sock,FIONBIO,&off);
     if(err!=0){
@@ -537,8 +500,10 @@ int jouerPiece(TCoupIA* coupIA, int sock, int sockIA, int numPartie, TSensTetePi
 	return 0;
 }
 
+//Coup adverse
 int coupAdverse(TCoupIA* coupIA, int sock, int sockIA){
     TCoupReq reqC;
+
 	// reception du coup adverse
 	int err = recv(sock, &reqC, sizeof(TCoupReq), 0);
 	if (err != sizeof(TCoupReq)) {
@@ -546,7 +511,7 @@ int coupAdverse(TCoupIA* coupIA, int sock, int sockIA){
 		shutdown(sock, SHUT_RDWR); close(sock);
 		return -6;
 	}
-    printf("Coup recu du serveur\n");
+
 	// transmission coup adverse a l'IA
 	switch (reqC.typeCoup) {
 		case DEPLACER :
@@ -771,13 +736,14 @@ int coupAdverse(TCoupIA* coupIA, int sock, int sockIA){
 				shutdown(sockIA, SHUT_RDWR); close(sockIA);
 				return -5;
 			}
-			printf("coup envoye a l'IA\n");
 		}
 	}
 	return 0;
 }
 
+//Validation d'un coup
 int validationCoup(char joueur, int sock){
+
 	// reception de la validation d'un coup
 	TCoupRep repC;
 	int cont = 1;
@@ -789,8 +755,7 @@ int validationCoup(char joueur, int sock){
 	}
 
 	switch(repC.err){
-        case ERR_OK :
-            printf("Erreur ERR_OK\n");
+	    case ERR_OK :
             break;
 
         case ERR_COUP :
@@ -815,7 +780,7 @@ int validationCoup(char joueur, int sock){
 	switch (repC.validCoup) {
             case VALID :
                 break;
-                printf("VAL²ID\n");
+                printf("VALID\n");
 
             case TIMEOUT :
                 cont = 0;

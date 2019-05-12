@@ -6,14 +6,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TCoup {
-	private CodeRep codeRep;    //deplacement 0, piece capturee 1, aucun 2
-	private Sens pieceSens;    //sens de la piece
-	private Type pieceType;    //type de la piece
-	private Ligne TlgDep;        //si deplacement ligne depart
+	private CodeRep codeRep;    //erreur 0, deplacement 1, piece capturee 2, aucun 3
+	private Sens pieceSens;    	//sens de la piece
+	private Type pieceType;    	//type de la piece
+	private Ligne TlgDep;     	//si deplacement ligne depart
 	private Colonne TcolDep;    //si deplacement colonne depart
-	private Ligne TlgArr;        //si deplacement ligne arrivee
+	private Ligne TlgArr;       //si deplacement ligne arrivee
 	private Colonne TcolArr;    //si deplacement colonne arrivee
-	private boolean estCapt;    //si piece capturee 1 sinon 0
+	private boolean estCapt;    //si piece capturee true sinon false
 
 	enum CodeRep {
 		DEPLACER,
@@ -22,12 +22,22 @@ public class TCoup {
 	}
 
 	enum Type {
-		KODAMA,
-		KODAMA_SAMOURAI,
-		KIRIN,
-		KOROPOKKURU,
-		ONI,
-		SUPER_ONI
+		KODAMA(0),
+		KODAMA_SAMOURAI(1),
+		KIRIN(2),
+		KOROPOKKURU(3),
+		ONI(4),
+		SUPER_ONI(5);
+		
+		private int id;
+		Type(int id) {
+			this.id = id;
+		}
+
+		public int getId() {
+			return id;
+		}
+		
 	}
 
 	enum Colonne {
@@ -93,13 +103,9 @@ public class TCoup {
 	}
 
 	public CoordGrille convertCoordGrille(int numCase) {
-		//System.out.println("Num : " + numCase);
 		numCase--;
 		int ligne = ((numCase / 5) + 1);
 		int colonne = ((numCase % 5) + 1);
-		/*System.out.println("Ligne : " + Ligne.getEnum(ligne));
-		System.out.println("Colonne : " + Colonne.getEnum(colonne));
-		System.out.println();*/
 		return new CoordGrille(numCase, Ligne.getEnum(ligne), Colonne.getEnum(colonne));
 	}
 	

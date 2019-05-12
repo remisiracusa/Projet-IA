@@ -8,6 +8,7 @@ public class TPartie {
 	private HashMap<String,Integer> capture;
 	
 	public TPartie() {
+		//Reserve des pieces capturees
 		capture = new HashMap<String, Integer>();
 		capture.put("KODAMA", 0);
 		capture.put("KIRIN", 0);
@@ -15,11 +16,13 @@ public class TPartie {
 		capture.put("ONI", 0);
 	}
 	
+	//Sens des pieces
 	public enum Sens {
 		  NORD,
 		  SUD;	
 	}
 	
+	//Code requete
 	public enum CodeReq {
 		  INIT;	
 	}
@@ -37,13 +40,13 @@ public class TPartie {
 		this.sens = sens;
 	}
 	
+	//Capture d'une piece
 	public void capture(String piece) {
-		System.out.println(piece + " capture !");
 		capture.replace(piece, (capture.get(piece)+1));
 	}
 	
+	//Deposer une piece
 	public void relacher(String piece) {
-		System.out.println(piece + " relache !");
 		capture.replace(piece, (capture.get(piece)-1));
 	}
 }

@@ -19,20 +19,21 @@ import projet_ia.TPartie.Sens;
 
 
 public class Moteur_IA {
-	static Sens sens;
-	static int numPartie;
-	static boolean tour;
-	static boolean cont;
+	static Sens sens;		//Sens des pieces attribuees
+	static int numPartie;	//Compteur partie
+	static boolean tour;	//Gestion du tour du joueur
+	static boolean cont;	//Gestion d'arret de la partie
 
 	public static void main(String[] args) {
 		
-		ServerSocket srv; //Socket de connexion
-		Socket sockComm; // Socket de communication
-		TPartie TPartie = new TPartie();
-		Grille grille = new Grille();
-		numPartie = 1;
-		cont = true;
+		ServerSocket srv;					//Socket de connexion
+		Socket sockComm; 					//Socket de communication
+		TPartie TPartie = new TPartie();	
+		Grille grille = new Grille();		//Création de la grille
+		numPartie = 1;						
+		cont = true;						
 		try{
+			//Lancement du serveur IA
 			srv = new ServerSocket(Integer.parseInt(args[0]));
 			sockComm = srv.accept();
 			InputStream is = sockComm.getInputStream();
@@ -41,44 +42,55 @@ public class Moteur_IA {
 			DataOutputStream dos = new DataOutputStream(os);
 			System.out.println("Début du serveur");
 			
-			SICStus sp = grille.connexionSicstus();
+			//Connexion au prolog
+			SICStus sp = connexionSicstus();
 			
 			//Initialisation
 			if(dis.readInt() == 0) {
 				TPartie.setCodeReq(CodeReq.INIT);
 			}
+			
+			//Sens des pieces attribuees
 			if(dis.readInt() == 0) {
 				TPartie.setSens(Sens.NORD);
 			}else {
 				TPartie.setSens(Sens.SUD);
 			}			
 
-			System.out.println("Reçu : "+TPartie.getCodeReq()+" "+TPartie.getSens()+" "+numPartie+" "+tour);
-
+			//Gestion des parties
 			while(numPartie < 3) {
 				if((numPartie == 1 && TPartie.getSens() == Sens.SUD) || (numPartie == 2 && TPartie.getSens() == Sens.NORD)) {
-					System.out.println("je commence");
+					//Mon tour
 					tour = true;
 				}else {
-					System.out.println("je commence pas");
+					//Tour adverse
 					tour = false;
 				}
+				
 				//Mise à zero de la grille
 				grille.initialisationGrille();
+				
+				//Boucle des tours de jeu
 				while(cont) {
 					if(tour) {
-
-						//Trouver un coup avec Prolog + gerer si timeout recu -> numPartie++; break;
+						
+						//Je joue
 						String sens = "";
 						if(TPartie.getSens() == Sens.NORD) {
 							sens = "bottom";
 						}else {
 							sens = "top";
 						}
-						String requete = "yokaiRandom("+grille.getGrilleProlog()+","+sens+",Piece,Ind,NewInd,CarteCapturee)."; 
-						//String requete = "yokai2("+grille.getGrilleProlog()+","+sens+",Piece,Ind,NewInd,CarteCapturee)."; 
-						//System.out.println(requete);
+						
+						//Solution pour choisir les coups aleatoirement
+						//String requete = "yokaiRandom("+grille.getGrilleProlog()+","+sens+",Piece,Ind,NewInd,CarteCapturee)."; 
+						
+						//Solution pour choisir les coups selon l'algorithme minmax
+						String requete = "launchMinMax("+grille.getGrilleProlog()+","+sens+",Piece,Ind,NewInd,CarteCapturee).";
+						
+						//Recuperation du coup a jouer
 						TCoup coup = coupProlog(requete, sp, TPartie);
+						
 						//Envoie coup
 						switch(coup.getCodeRep()) {
 						case DEPLACER :
@@ -95,18 +107,7 @@ public class Moteur_IA {
 						}
 
 						if(coup.getCodeRep() != CodeRep.AUCUN) {
-							/*coup.setPieceSens(TPartie.getSens());
-							switch(TPartie.getSens()) {
-							case NORD :
-								dos.writeInt(0);
-								break;
-							case SUD :
-								dos.writeInt(1);
-								break;
-							default :
-								break;
-							}*/
-
+							
 							switch(coup.getPieceType()) {
 							case KODAMA :
 								dos.writeInt(0);
@@ -121,7 +122,6 @@ public class Moteur_IA {
 								dos.writeInt(3);
 								break;
 							case ONI :
-								System.out.println("envoie 4");
 								dos.writeInt(4);
 								break;
 							case SUPER_ONI :
@@ -130,123 +130,42 @@ public class Moteur_IA {
 							default :
 								break;
 							}
-
-							switch(coup.getTlgDep()) {
-							case UN :
-								dos.writeInt(0);
-								break;
-							case DEUX :
-								dos.writeInt(1);
-								break;
-							case TROIS :
-								dos.writeInt(2);
-								break;
-							case QUATRE :
-								dos.writeInt(3);
-								break;
-							case CINQ :
-								dos.writeInt(4);
-								break;
-							case SIX :
-								dos.writeInt(5);
-								break;
-							default :
-								break;
-							}
-
-							switch(coup.getTcolDep()) {
-							case A :
-								dos.writeInt(0);
-								break;
-							case B :
-								dos.writeInt(1);
-								break;
-							case C :
-								dos.writeInt(2);
-								break;
-							case D :
-								dos.writeInt(3);
-								break;
-							case E :
-								dos.writeInt(4);
-								break;
-							default :
-								break;
-							}
+							
+							dos.writeInt((coup.getTlgDep().getId()-1));
+							dos.writeInt((coup.getTcolDep().getId()-1));
 
 							if(coup.getCodeRep() == CodeRep.DEPLACER) {
-								switch(coup.getTlgArr()) {
-								case UN :
-									dos.writeInt(0);
-									break;
-								case DEUX :
-									dos.writeInt(1);
-									break;
-								case TROIS :
-									dos.writeInt(2);
-									break;
-								case QUATRE :
-									dos.writeInt(3);
-									break;
-								case CINQ :
-									dos.writeInt(4);
-									break;
-								case SIX :
-									dos.writeInt(5);
-									break;
-								default :
-									break;
-								}
-
-								switch(coup.getTcolArr()) {
-								case A :
-									dos.writeInt(0);
-									break;
-								case B :
-									dos.writeInt(1);
-									break;
-								case C :
-									dos.writeInt(2);
-									break;
-								case D :
-									dos.writeInt(3);
-									break;
-								case E :
-									dos.writeInt(4);
-									break;
-								default :
-									break;
-								}
+								dos.writeInt((coup.getTlgArr().getId()-1));
+								dos.writeInt((coup.getTcolArr().getId()-1));
 
 								if(coup.isEstCapt()) {
 									dos.writeInt(1);
 								}else {
 									dos.writeInt(0);
 								}
-								//Deplacer sur grille
-								System.out.println(grille.toString());
+								
+								//Deplacement sur grille
 								grille.miseAJourDeplacer(coup);
 							}else {
+								//Deposer piece sur grille
 								grille.miseAJourDeposer(coup);
-								//Deposer sur grille
-							}
-							System.out.println("Coup envoye : "+coup.getCodeRep()+" "+coup.getPieceSens()+" "+coup.getPieceType()+" "+coup.getTlgDep()+" "+coup.getTcolDep()+" "+" "+coup.getTlgArr()+" "+coup.getTcolArr()+" "+coup.isEstCapt());							
-							
-						}else {
-							System.out.println("Coup envoye : "+coup.getCodeRep());
+							}							
 						}
 						tour = false;
-						
 					}else {	
+						
+						//Tour adverse
 						TCoup coup = new TCoup();
-						System.out.println("Reception coup adverse");
 						int cr = dis.readInt();
+						
 						//Réinitialisation
 						if(cr == 0) {
-							TPartie.setCodeReq(CodeReq.INIT);														
-							System.out.println("Fin de la partie !");
+							
+							//Fin de la partie
+							TPartie.setCodeReq(CodeReq.INIT);
 							break;
 						}else {
+							
 							//Reception coup adverse
 							switch(cr) {
 							case 1 :
@@ -261,7 +180,7 @@ public class Moteur_IA {
 							default :
 								break;
 							}
-							System.out.println(coup.getCodeRep());
+
 							if(coup.getCodeRep() != CodeRep.AUCUN) {
 								switch(dis.readInt()) {
 								case 0 :
@@ -285,7 +204,7 @@ public class Moteur_IA {
 								default :
 									break;
 								}
-								System.out.println(coup.getPieceType());
+
 								switch(dis.readInt()) {
 								case 0 :
 									coup.setPieceSens(Sens.NORD);
@@ -296,98 +215,13 @@ public class Moteur_IA {
 								default :
 									break;
 								}
-								System.out.println(coup.getPieceSens());
 
-								switch(dis.readInt()) {
-								case 0 :
-									coup.setTcolDep(Colonne.A);
-									break;
-								case 1 :
-									coup.setTcolDep(Colonne.B);
-									break;
-								case 2 :
-									coup.setTcolDep(Colonne.C);
-									break;
-								case 3 :
-									coup.setTcolDep(Colonne.D);
-									break;
-								case 4 :
-									coup.setTcolDep(Colonne.E);
-									break;
-								default :
-									break;
-								}
-								System.out.println(coup.getTcolDep());
-
-								switch(dis.readInt()) {
-								case 0 :
-									coup.setTlgDep(Ligne.UN);
-									break;
-								case 1 :
-									coup.setTlgDep(Ligne.DEUX);
-									break;
-								case 2 :
-									coup.setTlgDep(Ligne.TROIS);
-									break;
-								case 3 :
-									coup.setTlgDep(Ligne.QUATRE);
-									break;
-								case 4 :
-									coup.setTlgDep(Ligne.CINQ);
-									break;
-								case 5 :
-									coup.setTlgDep(Ligne.SIX);
-									break;
-								default :
-									break;
-								}
-								System.out.println(coup.getTlgDep());
-
+								coup.setTcolDep(Colonne.getEnum(dis.readInt()+1));
+								coup.setTlgDep(Ligne.getEnum(dis.readInt()+1));
+															
 								if(coup.getCodeRep() == CodeRep.DEPLACER) {
-									switch(dis.readInt()) {
-									case 0 :
-										coup.setTcolArr(Colonne.A);
-										break;
-									case 1 :
-										coup.setTcolArr(Colonne.B);
-										break;
-									case 2 :
-										coup.setTcolArr(Colonne.C);
-										break;
-									case 3 :
-										coup.setTcolArr(Colonne.D);
-										break;
-									case 4 :
-										coup.setTcolArr(Colonne.E);
-										break;
-									default :
-										break;
-									}
-									System.out.println(coup.getTlgArr());
-
-									switch(dis.readInt()) {
-									case 0 :
-										coup.setTlgArr(Ligne.UN);
-										break;
-									case 1 :
-										coup.setTlgArr(Ligne.DEUX);
-										break;
-									case 2 :
-										coup.setTlgArr(Ligne.TROIS);
-										break;
-									case 3 :
-										coup.setTlgArr(Ligne.QUATRE);
-										break;
-									case 4 :
-										coup.setTlgArr(Ligne.CINQ);
-										break;
-									case 5 :
-										coup.setTlgArr(Ligne.SIX);
-										break;
-									default :
-										break;
-									}
-									System.out.println(coup.getTlgArr());
+									coup.setTcolArr(Colonne.getEnum(dis.readInt()+1));
+									coup.setTlgArr(Ligne.getEnum(dis.readInt()+1));
 
 									switch(dis.readInt()) {
 									case 0 :
@@ -399,25 +233,24 @@ public class Moteur_IA {
 									default :
 										break;
 									}
-
-									System.out.println(coup.isEstCapt());
-									System.out.println("Coup recu : "+coup.getCodeRep()+" "+coup.getPieceSens()+" "+coup.getPieceType()+" "+coup.getTlgDep()+" "+coup.getTcolDep()+" "+" "+coup.getTlgArr()+" "+coup.getTcolArr()+" "+coup.isEstCapt());
 									
 									//Deplacer sur grille
 									grille.miseAJourDeplacer(coup);
 								}else if(coup.getCodeRep() == CodeRep.DEPOSER) {
 									//Deposer sur grille
 									grille.miseAJourDeposer(coup);
-									//grille.miseAJourDeposer(TCoup);
 								}
-								
 							}
 						}
 						tour = true;
 					}
 				}
+				
+				//Partie suivante
 				numPartie++;
 			}
+			
+			//Arret de la communication et du serveur
 			dos.close();
 			os.close();
 			dis.close();
@@ -431,17 +264,10 @@ public class Moteur_IA {
 
 	}
 	
+	//Renvoie le coup suivant a jouer
 	public static TCoup coupProlog(String requete, SICStus sp, TPartie TPartie) {
 		TCoup coup = new TCoup();
 		String saisie = new String(requete);
-
-		
-		// lecture au clavier d'une requète Prolog
-		//System.out.print("| ?- ");
-		//saisie = saisieClavier();
-
-		// boucle pour saisir les informations
-		//while (! saisie.equals("halt.")) {
 
 		// HashMap utilisé pour stocker les solutions
 		HashMap results = new HashMap();
@@ -449,10 +275,9 @@ public class Moteur_IA {
 		SPTerm ind = new SPTerm(sp);
 		SPTerm newInd = new SPTerm(sp);
 		SPTerm carteCapturee = new SPTerm(sp);
-		try {
 
+		try {
 			// Creation d'une requete (Query) Sicstus
-			//   - en fonction de la saisie de l'utilisateur
 			//   - instanciera results avec les résultats de la requète
 			Query qu = sp.openQuery(saisie,results);
 			
@@ -463,13 +288,11 @@ public class Moteur_IA {
 			boolean continuer = !(results.isEmpty());
 
 			if (moreSols && continuer) {
-				//Voir pour deposer
-				System.out.println("coup prolog deplacer");
 				coup.setCodeRep(CodeRep.DEPLACER);
 				coup.setPieceSens(TPartie.getSens());
+				
 				// chaque solution est sockée dans un HashMap
 				// sous la forme : VariableProlog -> Valeur
-				//System.out.println(results + " ? ");
 				piece = (SPTerm) results.get("Piece");
 				ind = (SPTerm) results.get("Ind");
 				newInd = (SPTerm) results.get("NewInd");
@@ -481,6 +304,7 @@ public class Moteur_IA {
 				coup.setTlgDep(cg.row);
 				coup.setTcolArr(cgNewInd.col);
 				coup.setTlgArr(cgNewInd.row);
+				
 				switch((int) piece.getInteger()){
 				case 1 :
 					coup.setPieceType(Type.KODAMA);
@@ -566,25 +390,16 @@ public class Moteur_IA {
 					default:
 						break;
 					}
+					
 					TPartie.capture(p);
 					coup.setEstCapt(true);
 				}
-
-				// demande à l'utilisateur de continuer ...
-				//saisie = saisieClavier();
-				if (saisie.equals(";")) {
-					// solution suivante --> results contient la nouvelle solution
-					moreSols = qu.nextSolution();
-				}else {
-					continuer = false;
-				}
 			}else {
+				//Aucun coup disponible
 				coup.setCodeRep(CodeRep.AUCUN);
-				System.out.println("coup prolog aucun");
 			}
 
 			// fermeture de la requète
-			System.err.println("Fermeture requete");
 			qu.close();
 
 		}
@@ -595,13 +410,28 @@ public class Moteur_IA {
 		catch (Exception e) {
 			System.err.println("Other exception : " + e);
 		}
-
-		//System.out.print("| ?- ");
-		// lecture au clavier
-		//saisie = saisieClavier();        
-		//}
-		System.out.println("End of jSicstus");
-		System.out.println("Bye bye");
 		return coup;
+	}
+	
+	public static SICStus connexionSicstus() {
+		SICStus sp = null;
+
+		try {
+
+			// Creation d'un object SICStus
+			sp = new SICStus();
+
+			// Chargement d'un fichier prolog .pl
+			sp.load("./src/projet_ia/yokai.pl");
+
+		}
+		// exception déclanchée par SICStus lors de la création de l'objet sp
+		catch (SPException e) {
+			System.err.println("Exception SICStus Prolog : " + e);
+			e.printStackTrace();
+			System.exit(-2);
+		}
+
+		return sp;
 	}
 }

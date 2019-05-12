@@ -10,8 +10,9 @@ import se.sics.jasper.SICStus;
 import se.sics.jasper.SPException;
 
 public class Grille {
+	//Gestion de la grille du jeu
 	private List<Integer> grille;
-	//[11,9,10,9,11,0,0,0,0,0,0,7,7,7,0,0,1,1,1,0,0,0,0,0,0,5,3,4,3,5]
+	
 	public Grille() {
 		super();
 		this.grille = new ArrayList<Integer>();
@@ -22,6 +23,7 @@ public class Grille {
 		return grille;
 	}
 	
+	//Mise en forme de la grille pour l'envoie a prolog
 	public String getGrilleProlog() {
 		String s = "[";
 		for(int i = 0; i < grille.size(); i++) {
@@ -34,6 +36,7 @@ public class Grille {
 		return s;
 	}
 	
+	//Mise a jour de la grille lors d'un deplacement
 	public void miseAJourDeplacer(TCoup coup) {
 		CoordGrille cgDep = coup.convertCoordGrilleToInt(coup.getTcolDep(), coup.getTlgDep());
 		CoordGrille cgArr = coup.convertCoordGrilleToInt(coup.getTcolArr(), coup.getTlgArr());
@@ -72,6 +75,7 @@ public class Grille {
 		
 	}
 	
+	//Mise a jour de la grille lors d'un deposement de piece
 	public void miseAJourDeposer(TCoup coup) {
 		CoordGrille cgDep = coup.convertCoordGrilleToInt(coup.getTcolDep(), coup.getTlgDep());
 		int piece = 0;
@@ -103,30 +107,7 @@ public class Grille {
 		grille.set(cgDep.numCase-1, piece);		
 	}
 	
-	
-	
-	public SICStus connexionSicstus() {
-		SICStus sp = null;
-
-		try {
-
-			// Creation d'un object SICStus
-			sp = new SICStus();
-
-			// Chargement d'un fichier prolog .pl
-			sp.load("./src/projet_ia/yokai.pl");
-
-		}
-		// exception déclanchée par SICStus lors de la création de l'objet sp
-		catch (SPException e) {
-			System.err.println("Exception SICStus Prolog : " + e);
-			e.printStackTrace();
-			System.exit(-2);
-		}
-
-		return sp;
-	}
-	
+	//Mise a zero de la grille pour commencer le jeu
 	public void initialisationGrille() {
 		this.grille.clear();
 		grille.add(11);
@@ -159,17 +140,5 @@ public class Grille {
 		grille.add(4);
 		grille.add(3);
 		grille.add(5);
-	}
-	
-	public String toString() {
-		String s = "[";
-		for(int i = 0; i < grille.size(); i++) {
-			s += grille.get(i);
-			if(i < grille.size()-1) {
-				s += ",";
-			}
-		}
-		s+= "]";
-		return s;
 	}
 }
