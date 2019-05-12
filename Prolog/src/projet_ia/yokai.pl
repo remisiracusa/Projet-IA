@@ -180,7 +180,7 @@ directionsRoiPossible(_, _, AllDirs, AllDirs).
 
 scoreRoi(NbDirRoiPossible, Score):-
         NbDirRoiPossible == 0,
-        Score is 100.
+        Score is -100.
 
 scoreRoi(NbDirRoiPossible, Score):-
         NbDirRoiPossible =\= 0,

@@ -179,6 +179,7 @@ void loop() {
 				joueurEnCours = infoJoueur[joueurEnCours].sensTetePiece != NORD ? joueurAdverse
 																				: joueurEnCours;    // Sélection du joueur sensTête NORD pour la revanche
 				printf("Le joueur %s commence", infoJoueur[joueurEnCours].nomJoueur);
+				initialiserPartie();
 				numPartie++;
 			} else {
 				printf("Jeu terminé\n");
